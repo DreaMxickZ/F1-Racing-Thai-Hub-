@@ -73,45 +73,53 @@ const NewsManagement = () => {
       {news.length > 0 ? (
         <div className="space-y-4">
           {news.map((item) => (
-            <div key={item.id} className="card p-6 flex items-center justify-between">
-              <div className="flex items-start space-x-4 flex-1">
+            <div key={item.id} className="card overflow-hidden">
+              <div className="flex flex-col md:flex-row">
+                {/* Image */}
                 {item.image_url && (
-                  <img 
-                    src={item.image_url}
-                    alt={item.title}
-                    className="w-24 h-24 object-cover rounded-lg"
-                  />
+                  <div className="md:w-80 h-56 overflow-hidden flex-shrink-0">
+                    <img 
+                      src={item.image_url}
+                      alt={item.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 )}
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold mb-2">{item.title}</h3>
-                  <p className="text-f1-lightgray text-sm line-clamp-2 mb-2">
-                    {item.content}
-                  </p>
-                  <p className="text-xs text-f1-lightgray">
-                    สร้างเมื่อ: {new Date(item.created_at).toLocaleDateString('th-TH', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
+                
+                {/* Content */}
+                <div className="flex-1 p-6 flex items-center justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold mb-2">{item.title}</h3>
+                    <p className="text-f1-lightgray text-sm line-clamp-2 mb-2">
+                      {item.content}
+                    </p>
+                    <p className="text-xs text-f1-lightgray">
+                      สร้างเมื่อ: {new Date(item.created_at).toLocaleDateString('th-TH', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="flex space-x-2 ml-4">
+                    <Link
+                      to={`/admin/news/edit/${item.id}`}
+                      className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg transition-colors"
+                    >
+                      <Edit className="w-5 h-5" />
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex space-x-2 ml-4">
-                <Link
-                  to={`/admin/news/edit/${item.id}`}
-                  className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg transition-colors"
-                >
-                  <Edit className="w-5 h-5" />
-                </Link>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-lg transition-colors"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
               </div>
             </div>
           ))}

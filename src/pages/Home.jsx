@@ -96,7 +96,7 @@ const Home = () => {
             <Newspaper className="text-f1-red w-6 h-6 mr-2" />
             <h2 className="text-2xl font-bold">ข่าวสาร F1</h2>
           </div>
-          <Link to="/admin/news" className="text-f1-red hover:underline">
+          <Link to="/news" className="text-f1-red hover:underline">
             ดูทั้งหมด →
           </Link>
         </div>
@@ -104,20 +104,37 @@ const Home = () => {
         {news.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {news.map((item) => (
-              <div key={item.id} className="card p-6">
+              <Link 
+                key={item.id} 
+                to={`/news/${item.id}`}
+                className="card overflow-hidden hover:scale-105 transition-transform"
+              >
                 {item.image_url && (
-                  <img 
-                    src={item.image_url} 
-                    alt={item.title}
-                    className="w-full h-48 object-cover rounded-lg mb-4"
-                  />
+                  <div className="w-full h-56 overflow-hidden">
+                    <img 
+                      src={item.image_url} 
+                      alt={item.title}
+                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                    />
+                  </div>
                 )}
-                <h3 className="text-xl font-bold mb-2">{item.title}</h3>
-                <p className="text-f1-lightgray text-sm mb-4">
-                  {new Date(item.created_at).toLocaleDateString('th-TH')}
-                </p>
-                <p className="text-f1-lightgray line-clamp-3">{item.content}</p>
-              </div>
+                <div className="p-6">
+                  <h3 className="text-xl font-bold mb-2 line-clamp-2">{item.title}</h3>
+                  <p className="text-f1-lightgray text-sm mb-4">
+                    {new Date(item.created_at).toLocaleDateString('th-TH', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                  <p className="text-f1-lightgray line-clamp-3">{item.content}</p>
+                  <div className="mt-4">
+                    <span className="text-f1-red hover:underline inline-flex items-center">
+                      อ่านต่อ →
+                    </span>
+                  </div>
+                </div>
+              </Link>
             ))}
           </div>
         ) : (

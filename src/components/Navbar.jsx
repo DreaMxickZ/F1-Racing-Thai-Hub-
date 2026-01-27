@@ -35,6 +35,14 @@ const Navbar = () => {
               <Newspaper className="w-5 h-5" />
               <span>หน้าแรก</span>
             </Link>
+
+            <Link 
+              to="/news" 
+              className={`nav-link flex items-center space-x-2 pb-1 ${isActive('/news')}`}
+            >
+              <Newspaper className="w-5 h-5" />
+              <span>ข่าวสาร</span>
+            </Link>
             
             <Link 
               to="/drivers" 

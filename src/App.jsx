@@ -6,6 +6,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 // Pages
 import Home from './pages/Home';
+import News from './pages/News';
+import NewsDetail from './pages/NewsDetail';
 import Drivers from './pages/Drivers';
 import Teams from './pages/Teams';
 import Circuits from './pages/Circuits';
@@ -30,6 +32,8 @@ function App() {
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Home />} />
+              <Route path="/news" element={<News />} />
+              <Route path="/news/:id" element={<NewsDetail />} />
               <Route path="/drivers" element={<Drivers />} />
               <Route path="/teams" element={<Teams />} />
               <Route path="/circuits" element={<Circuits />} />

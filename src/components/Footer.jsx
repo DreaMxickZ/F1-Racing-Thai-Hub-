@@ -27,6 +27,11 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/news" className="text-f1-lightgray hover:text-f1-red transition-colors">
+                  ข่าวสาร
+                </Link>
+              </li>
+              <li>
                 <Link to="/drivers" className="text-f1-lightgray hover:text-f1-red transition-colors">
                   นักแข่ง
                 </Link>
