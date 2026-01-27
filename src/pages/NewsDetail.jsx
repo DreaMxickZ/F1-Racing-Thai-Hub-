@@ -121,6 +121,11 @@ const NewsDetail = () => {
           <div className="prose prose-invert prose-lg max-w-none">
             <div className="text-f1-white text-lg leading-relaxed whitespace-pre-wrap">
               {news.content}
+
+              <img 
+                src={news.image_url}
+                alt={news.title}
+              />
             </div>
           </div>
 
