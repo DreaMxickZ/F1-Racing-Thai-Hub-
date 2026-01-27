@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-f1-black text-f1-white;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-f1-red text-white px-6 py-3 rounded-lg font-bold hover:bg-red-700 transition-all duration-300;
+  }
+  
+  .btn-secondary {
+    @apply bg-f1-gray text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-700 transition-all duration-300;
+  }
+
+  .card {
+    @apply bg-f1-gray rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300;
+  }
+
+  .nav-link {
+    @apply text-f1-white hover:text-f1-red transition-colors duration-200 font-semibold;
+  }
+}
