@@ -133,7 +133,7 @@ const NewsDetail = () => {
           <div className="mt-12 pt-8 border-t border-f1-gray">
             <h3 className="text-xl font-bold mb-4">แชร์ข่าวนี้</h3>
             <div className="flex space-x-4">
-              <button
+              {/* <button
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href);
                   alert('คัดลอกลิงก์แล้ว!');
@@ -141,7 +141,22 @@ const NewsDetail = () => {
                 className="btn-secondary"
               >
                 📋 คัดลอกลิงก์
-              </button>
+              </button> */}
+
+              <button
+  onClick={() => {
+    const url = encodeURIComponent(window.location.href);
+    window.open(
+      `https://www.facebook.com/sharer/sharer.php?u=${url}`,
+      '_blank',
+      'noopener,noreferrer'
+    );
+  }}
+  className="btn-secondary"
+>
+  📘 แชร์บน Facebook
+</button>
+
             </div>
           </div>
 
