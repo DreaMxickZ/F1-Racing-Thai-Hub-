@@ -80,7 +80,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="pt-6 border-t border-f1-lightgray">
           <div className="flex flex-col md:flex-row justify-between items-center text-sm text-f1-lightgray">
-            <p>© 2026 F1 Racing Hub. All rights reserved.</p>
+            <p>© 2026 F1 Racing Thai Hub. All rights reserved.</p>
             <p>Made with ❤️ by Claude AI</p>
           </div>
         </div>
