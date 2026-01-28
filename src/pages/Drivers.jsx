@@ -69,12 +69,12 @@ const Drivers = () => {
           return (
             <div key={driver.driverId} className="card overflow-hidden group">
               {/* Driver Image with Car */}
-              <div className="relative h-64 bg-gradient-to-br from-f1-black to-f1-gray overflow-hidden">
+              <div className="relative h-[420px] bg-gradient-to-br from-f1-black to-f1-gray overflow-hidden">
                 {details.image_url ? (
                   <img 
                     src={details.image_url}
                     alt={`${driver.givenName} ${driver.familyName}`}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    className="w-full h-full object-cover object-top transform group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -120,7 +120,7 @@ const Drivers = () => {
                   
                   {driver.permanentNumber && (
                     <p className="text-sm">
-                      หมายเลขถาวร: {driver.permanentNumber}
+                      หมายเลข: {driver.permanentNumber}
                     </p>
                   )}
                 </div>
@@ -131,7 +131,7 @@ const Drivers = () => {
                     <img 
                       src={details.car_image_url}
                       alt={`${driver.familyName}'s car`}
-                      className="w-full h-32 object-contain"
+                      className="w-full h-64 object-contain"
                     />
                   </div>
                 )}
