@@ -23,7 +23,7 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <Flag className="text-f1-red w-8 h-8" />
-            <span className="text-2xl font-bold text-f1-red">F1 Racing Hub</span>
+            <span className="text-2xl font-bold text-f1-red">F1 Racing Thai Hub</span>
           </Link>
 
           {/* Navigation Links */}
