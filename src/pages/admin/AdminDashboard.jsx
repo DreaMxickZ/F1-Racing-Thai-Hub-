@@ -66,12 +66,12 @@ const AdminDashboard = () => {
         
         <div className="card p-6">
           <h3 className="text-f1-lightgray mb-2">นักแข่ง</h3>
-          <p className="text-3xl font-bold text-f1-red">20</p>
+          <p className="text-3xl font-bold text-f1-red">22</p>
         </div>
         
         <div className="card p-6">
           <h3 className="text-f1-lightgray mb-2">ทีม</h3>
-          <p className="text-3xl font-bold text-f1-red">10</p>
+          <p className="text-3xl font-bold text-f1-red">11</p>
         </div>
       </div>
     </div>

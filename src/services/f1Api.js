@@ -59,7 +59,7 @@ export const jolpicaApi = {
   // ตารางแข่ง
   async getSchedule(year = 2026) {
     try {
-      const response = await fetch(`${JOLPICA_BASE_URL}/${year}.json`);
+      const response = await fetch(`${JOLPICA_BASE_URL}/${year}.json?limit=100`);
       const data = await response.json();
       return data.MRData.RaceTable.Races;
     } catch (error) {
@@ -71,7 +71,7 @@ export const jolpicaApi = {
   // ข้อมูลนักแข่ง
   async getDrivers(year = 2026) {
     try {
-      const response = await fetch(`${JOLPICA_BASE_URL}/${year}/drivers.json`);
+      const response = await fetch(`${JOLPICA_BASE_URL}/${year}/drivers.json?limit=100`);
       const data = await response.json();
       return data.MRData.DriverTable.Drivers;
     } catch (error) {
@@ -83,7 +83,7 @@ export const jolpicaApi = {
   // ข้อมูลทีม
   async getConstructors(year = 2026) {
     try {
-      const response = await fetch(`${JOLPICA_BASE_URL}/${year}/constructors.json`);
+      const response = await fetch(`${JOLPICA_BASE_URL}/${year}/constructors.json?limit=100`);
       const data = await response.json();
       return data.MRData.ConstructorTable.Constructors;
     } catch (error) {
@@ -92,24 +92,63 @@ export const jolpicaApi = {
     }
   },
 
-  // ตารางคะแนนนักแข่ง
+  // ตารางคะแนนนักแข่ง (merge กับ full driver list เพื่อให้ครบ 22 คน)
   async getDriverStandings(year = 2026) {
     try {
-      const response = await fetch(`${JOLPICA_BASE_URL}/${year}/driverStandings.json`);
-      const data = await response.json();
-      return data.MRData.StandingsTable.StandingsLists[0]?.DriverStandings || [];
+      const [standingsRes, driversRes] = await Promise.all([
+        fetch(`${JOLPICA_BASE_URL}/${year}/driverStandings.json?limit=100`),
+        fetch(`${JOLPICA_BASE_URL}/${year}/drivers.json?limit=100`)
+      ]);
+      const standingsData = await standingsRes.json();
+      const driversData = await driversRes.json();
+
+      const standings = standingsData.MRData.StandingsTable.StandingsLists[0]?.DriverStandings || [];
+      const allDrivers = driversData.MRData.DriverTable.Drivers || [];
+
+      const standingIds = new Set(standings.map(s => s.Driver.driverId));
+
+      const missingDrivers = allDrivers
+        .filter(d => !standingIds.has(d.driverId))
+        .map((d, i) => ({
+          position: String(standings.length + i + 1),
+          points: '0',
+          wins: '0',
+          Driver: d,
+          Constructors: [{ name: '-', constructorId: 'unknown' }]
+        }));
+
+      return [...standings, ...missingDrivers];
     } catch (error) {
       console.error('Error fetching driver standings:', error);
       return [];
     }
   },
 
-  // ตารางคะแนนทีม
+  // ตารางคะแนนทีม (merge กับ full constructor list เพื่อให้ครบ 11 ทีม)
   async getConstructorStandings(year = 2026) {
     try {
-      const response = await fetch(`${JOLPICA_BASE_URL}/${year}/constructorStandings.json`);
-      const data = await response.json();
-      return data.MRData.StandingsTable.StandingsLists[0]?.ConstructorStandings || [];
+      const [standingsRes, constructorsRes] = await Promise.all([
+        fetch(`${JOLPICA_BASE_URL}/${year}/constructorStandings.json?limit=100`),
+        fetch(`${JOLPICA_BASE_URL}/${year}/constructors.json?limit=100`)
+      ]);
+      const standingsData = await standingsRes.json();
+      const constructorsData = await constructorsRes.json();
+
+      const standings = standingsData.MRData.StandingsTable.StandingsLists[0]?.ConstructorStandings || [];
+      const allConstructors = constructorsData.MRData.ConstructorTable.Constructors || [];
+
+      const standingIds = new Set(standings.map(s => s.Constructor.constructorId));
+
+      const missingConstructors = allConstructors
+        .filter(c => !standingIds.has(c.constructorId))
+        .map((c, i) => ({
+          position: String(standings.length + i + 1),
+          points: '0',
+          wins: '0',
+          Constructor: c
+        }));
+
+      return [...standings, ...missingConstructors];
     } catch (error) {
       console.error('Error fetching constructor standings:', error);
       return [];

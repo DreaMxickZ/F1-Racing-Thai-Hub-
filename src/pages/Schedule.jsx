@@ -1,237 +1,570 @@
 import { useState, useEffect } from 'react';
-import { Calendar, MapPin, Clock } from 'lucide-react';
+import { Calendar, MapPin, Clock, ChevronRight, Flag } from 'lucide-react';
 import { jolpicaApi } from '../services/f1Api';
+
+const SCOPED_CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700&family=Barlow:wght@400;500;600&display=swap');
+
+  .f1-schedule-page {
+    font-family: 'Barlow', sans-serif;
+    color: #f0f0f0;
+  }
+  .f1-schedule-page *, .f1-schedule-page *::before, .f1-schedule-page *::after {
+    box-sizing: border-box;
+  }
+
+  /* Wrapper */
+  .f1-schedule-page .sp-wrap {
+    background: #0a0a0c;
+    position: relative;
+    overflow: hidden;
+    min-height: 60vh;
+  }
+  .f1-schedule-page .sp-grid-bg {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none; z-index: 0;
+  }
+  .f1-schedule-page .sp-glow {
+    position: absolute; top: -15%; left: 50%; transform: translateX(-50%);
+    width: 900px; height: 500px;
+    background: radial-gradient(ellipse, rgba(225,6,0,0.07) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+  .f1-schedule-page .sp-inner {
+    max-width: 1100px; margin: 0 auto;
+    padding: 0 2rem 5rem;
+    position: relative; z-index: 1;
+  }
+
+  /* ── HEADER ──────────────────────────── */
+  .f1-schedule-page .sp-hd {
+    padding: 3.5rem 0 2.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 3rem; position: relative;
+  }
+  .f1-schedule-page .sp-eyebrow {
+    display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;
+  }
+  .f1-schedule-page .sp-eyebrow-txt {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.25em; text-transform: uppercase; color: #e10600;
+    margin: 0; padding: 0; line-height: 1;
+  }
+  .f1-schedule-page .sp-eyebrow-line {
+    flex: 1; max-width: 120px; height: 1px;
+    background: linear-gradient(90deg, #e10600, transparent);
+  }
+  .f1-schedule-page .sp-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(3rem, 8vw, 5.5rem); font-weight: 900;
+    line-height: 0.9; text-transform: uppercase; letter-spacing: -0.02em;
+    color: #ffffff; margin: 0; padding: 0;
+  }
+  .f1-schedule-page .sp-title em { font-style: italic; color: #e10600; }
+  .f1-schedule-page .sp-subtitle {
+    margin-top: 1.25rem; font-size: 0.88rem;
+    color: rgba(255,255,255,0.35); letter-spacing: 0.05em;
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .f1-schedule-page .sp-ghost-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 4rem; font-weight: 900; color: rgba(255,255,255,0.04);
+    position: absolute; right: 0; bottom: -0.5rem;
+    letter-spacing: -0.05em; line-height: 1;
+    user-select: none; pointer-events: none;
+  }
+  .f1-schedule-page .sp-badge {
+    display: inline-flex; align-items: center;
+    background: rgba(225,6,0,0.12); border: 1px solid rgba(225,6,0,0.28);
+    padding: 0.28rem 0.7rem; border-radius: 2px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em;
+    color: #e10600; text-transform: uppercase; margin-left: 1rem; vertical-align: middle;
+  }
+
+  /* ── RACE LIST ───────────────────────── */
+  .f1-schedule-page .sp-list {
+    display: flex; flex-direction: column; gap: 2px;
+  }
+
+  /* ── RACE CARD ───────────────────────── */
+  .f1-schedule-page .sp-card {
+    background: #111114;
+    border: 1px solid rgba(255,255,255,0.05);
+    position: relative; overflow: hidden;
+    transition: background 0.3s ease;
+    animation: sp-rise 0.4s ease both;
+  }
+  .f1-schedule-page .sp-card:hover { background: #17171c; }
+  .f1-schedule-page .sp-card.past { opacity: 0.5; }
+  .f1-schedule-page .sp-card.past:hover { opacity: 0.7; }
+  .f1-schedule-page .sp-card.next { border-color: rgba(225,6,0,0.35); }
+
+  /* next race glow */
+  .f1-schedule-page .sp-card.next::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, rgba(225,6,0,0.04), transparent 60%);
+    pointer-events: none;
+  }
+
+  /* top accent bar */
+  .f1-schedule-page .sp-card-bar {
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: #e10600; opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .f1-schedule-page .sp-card:hover .sp-card-bar { opacity: 1; }
+  .f1-schedule-page .sp-card.next .sp-card-bar { opacity: 1; }
+
+  /* ghost round number */
+  .f1-schedule-page .sp-card-ghost {
+    position: absolute; right: -0.5rem; top: 50%; transform: translateY(-50%);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 7rem; font-weight: 900; color: rgba(255,255,255,0.025);
+    line-height: 1; user-select: none; pointer-events: none;
+  }
+
+  .f1-schedule-page .sp-card-inner {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1.5rem;
+    padding: 1.75rem 2rem;
+    align-items: start;
+    position: relative; z-index: 1;
+  }
+
+  /* ── LEFT: Race Info ─────────────────── */
+  .f1-schedule-page .sp-race-top {
+    display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; flex-wrap: wrap;
+  }
+  .f1-schedule-page .sp-round-pill {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+    color: #e10600; border: 1px solid rgba(225,6,0,0.4);
+    padding: 0.2rem 0.6rem; border-radius: 2px; line-height: 1.4;
+  }
+  .f1-schedule-page .sp-sprint-pill {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    color: #fff; background: #e10600;
+    padding: 0.2rem 0.55rem; border-radius: 2px; line-height: 1.4;
+  }
+  .f1-schedule-page .sp-past-pill {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.62rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.12);
+    padding: 0.2rem 0.55rem; border-radius: 2px; line-height: 1.4;
+  }
+  .f1-schedule-page .sp-next-pill {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    color: #fff; background: rgba(225,6,0,0.8);
+    padding: 0.2rem 0.55rem; border-radius: 2px; line-height: 1.4;
+    animation: sp-pulse 2s ease-in-out infinite;
+  }
+  @keyframes sp-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  .f1-schedule-page .sp-race-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.7rem; font-weight: 900; text-transform: uppercase;
+    letter-spacing: 0.01em; color: #ffffff;
+    margin: 0 0 0.6rem; padding: 0; line-height: 1;
+  }
+  .f1-schedule-page .sp-circuit-row {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.82rem; color: rgba(255,255,255,0.4);
+    margin-bottom: 0.35rem;
+  }
+  .f1-schedule-page .sp-race-datetime {
+    display: flex; align-items: center; gap: 0.75rem;
+    margin-top: 0.75rem; flex-wrap: wrap;
+  }
+  .f1-schedule-page .sp-race-date-main {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.05rem; font-weight: 700; color: #fff; letter-spacing: 0.02em;
+  }
+  .f1-schedule-page .sp-race-time-main {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.05rem; font-weight: 700; color: #e10600; letter-spacing: 0.02em;
+  }
+
+  /* Map link */
+  .f1-schedule-page .sp-links {
+    display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;
+  }
+  .f1-schedule-page .sp-link {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #e10600; text-decoration: none; transition: gap 0.2s ease;
+  }
+  .f1-schedule-page .sp-link:hover { gap: 0.55rem; }
+
+  /* ── RIGHT: Sessions Panel ───────────── */
+  .f1-schedule-page .sp-sessions {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 2px;
+    min-width: 260px;
+    padding: 1rem 1.25rem 1.1rem;
+    flex-shrink: 0;
+  }
+  .f1-schedule-page .sp-sessions-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+    color: rgba(255,255,255,0.3); margin: 0 0 0.85rem; padding: 0;
+  }
+  .f1-schedule-page .sp-session-row {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 0.8rem;
+  }
+  .f1-schedule-page .sp-session-row:last-child { border-bottom: none; }
+  .f1-schedule-page .sp-session-row.race-row {
+    padding-top: 0.65rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    border-bottom: none;
+    margin-top: 0.2rem;
+  }
+  .f1-schedule-page .sp-session-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.38);
+  }
+  .f1-schedule-page .sp-session-row.race-row .sp-session-label {
+    color: #e10600;
+  }
+  .f1-schedule-page .sp-session-date {
+    font-size: 0.75rem; color: rgba(255,255,255,0.45);
+  }
+  .f1-schedule-page .sp-session-time {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.88rem; font-weight: 700; color: #ffffff; letter-spacing: 0.03em;
+    text-align: right;
+  }
+  .f1-schedule-page .sp-session-row.race-row .sp-session-time {
+    color: #e10600; font-size: 1rem;
+  }
+  .f1-schedule-page .sp-laps-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 0.85rem; padding-top: 0.7rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    font-size: 0.75rem;
+  }
+  .f1-schedule-page .sp-laps-label {
+    color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .f1-schedule-page .sp-laps-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700; color: #fff; font-size: 0.9rem; letter-spacing: 0.05em;
+  }
+
+  /* Responsive: stack on small screens */
+  @media (max-width: 700px) {
+    .f1-schedule-page .sp-card-inner {
+      grid-template-columns: 1fr;
+    }
+    .f1-schedule-page .sp-sessions {
+      min-width: unset; width: 100%;
+    }
+  }
+
+  /* ── LOADING ─────────────────────────── */
+  .f1-schedule-page .sp-loading {
+    min-height: 55vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 1rem; background: #0a0a0c;
+  }
+  .f1-schedule-page .sp-bar-track {
+    width: 200px; height: 2px;
+    background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;
+  }
+  .f1-schedule-page .sp-bar-fill {
+    height: 100%; background: #e10600; border-radius: 2px;
+    animation: sp-slide 1.2s ease-in-out infinite;
+  }
+  .f1-schedule-page .sp-load-txt {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.3em;
+    text-transform: uppercase; color: rgba(255,255,255,0.28);
+    margin: 0; padding: 0;
+  }
+
+  /* stagger */
+  .f1-schedule-page .sp-card:nth-child(1)  { animation-delay: 0.02s }
+  .f1-schedule-page .sp-card:nth-child(2)  { animation-delay: 0.04s }
+  .f1-schedule-page .sp-card:nth-child(3)  { animation-delay: 0.06s }
+  .f1-schedule-page .sp-card:nth-child(4)  { animation-delay: 0.08s }
+  .f1-schedule-page .sp-card:nth-child(5)  { animation-delay: 0.10s }
+  .f1-schedule-page .sp-card:nth-child(6)  { animation-delay: 0.12s }
+  .f1-schedule-page .sp-card:nth-child(7)  { animation-delay: 0.14s }
+  .f1-schedule-page .sp-card:nth-child(8)  { animation-delay: 0.16s }
+  .f1-schedule-page .sp-card:nth-child(9)  { animation-delay: 0.18s }
+  .f1-schedule-page .sp-card:nth-child(10) { animation-delay: 0.20s }
+  .f1-schedule-page .sp-card:nth-child(11) { animation-delay: 0.22s }
+  .f1-schedule-page .sp-card:nth-child(12) { animation-delay: 0.24s }
+  .f1-schedule-page .sp-card:nth-child(13) { animation-delay: 0.26s }
+  .f1-schedule-page .sp-card:nth-child(14) { animation-delay: 0.28s }
+  .f1-schedule-page .sp-card:nth-child(15) { animation-delay: 0.30s }
+  .f1-schedule-page .sp-card:nth-child(16) { animation-delay: 0.32s }
+  .f1-schedule-page .sp-card:nth-child(17) { animation-delay: 0.34s }
+  .f1-schedule-page .sp-card:nth-child(18) { animation-delay: 0.36s }
+  .f1-schedule-page .sp-card:nth-child(19) { animation-delay: 0.38s }
+  .f1-schedule-page .sp-card:nth-child(20) { animation-delay: 0.40s }
+  .f1-schedule-page .sp-card:nth-child(21) { animation-delay: 0.42s }
+  .f1-schedule-page .sp-card:nth-child(22) { animation-delay: 0.44s }
+  .f1-schedule-page .sp-card:nth-child(23) { animation-delay: 0.46s }
+  .f1-schedule-page .sp-card:nth-child(24) { animation-delay: 0.48s }
+
+  @keyframes sp-slide {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(400%); }
+  }
+  @keyframes sp-rise {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+`;
+
+const TOTAL_LAPS = {
+  albert_park: 58, bahrain: 57, shanghai: 56, suzuka: 53,
+  miami: 57, imola: 63, monaco: 78, catalunya: 66,
+  villeneuve: 70, red_bull_ring: 71, silverstone: 52, hungaroring: 70,
+  spa: 44, zandvoort: 72, monza: 53, baku: 51,
+  marina_bay: 62, americas: 56, rodriguez: 71, interlagos: 71,
+  vegas: 50, losail: 57, yas_marina: 58,
+};
+
+// Format a session object {date, time} → { dateStr, timeStr }
+const fmtSession = (session) => {
+  if (!session?.date) return { dateStr: '—', timeStr: '—' };
+  const dt = new Date(session.date + 'T' + (session.time || '00:00:00'));
+  return {
+    dateStr: dt.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }),
+    timeStr: session.time
+      ? dt.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+      : 'TBA',
+  };
+};
+
+const isPast = (dateStr) => new Date(dateStr) < new Date();
+
+const isNext = (races, index) => {
+  // First race that hasn't passed yet
+  for (let i = 0; i < races.length; i++) {
+    if (!isPast(races[i].date)) return i === index;
+  }
+  return false;
+};
 
 const Schedule = () => {
   const [schedule, setSchedule] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [totalLaps, setTotalLaps] = useState({});
 
   useEffect(() => {
-    fetchSchedule();
+    jolpicaApi.getSchedule(2026)
+      .then(setSchedule)
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
-  const fetchSchedule = async () => {
-    try {
-      const data = await jolpicaApi.getSchedule(2026);
-      setSchedule(data);
-      
-      // ข้อมูลจำนวนรอบแข่งโดยประมาณของแต่ละสนาม (ตามมาตรฐาน)
-      // ในการใช้งานจริงควรดึงจาก API หรือ database
-      const lapsData = {
-        'albert_park': 58,
-        'bahrain': 57,
-        'shanghai': 56,
-        'suzuka': 53,
-        'miami': 57,
-        'imola': 63,
-        'monaco': 78,
-        'catalunya': 66,
-        'villeneuve': 70,
-        'red_bull_ring': 71,
-        'silverstone': 52,
-        'hungaroring': 70,
-        'spa': 44,
-        'zandvoort': 72,
-        'monza': 53,
-        'baku': 51,
-        'marina_bay': 62,
-        'americas': 56,
-        'rodriguez': 71,
-        'interlagos': 71,
-        'vegas': 50,
-        'losail': 57,
-        'yas_marina': 58
-      };
-      setTotalLaps(lapsData);
-    } catch (error) {
-      console.error('Error fetching schedule:', error);
-    } finally {
-      setLoading(false);
+  const totalRaces = schedule.length;
+  const pastCount  = schedule.filter(r => isPast(r.date)).length;
+
+  // Build session rows for a race — includes SprintQualifying if present
+  const buildSessions = (race) => {
+    const rows = [];
+
+    if (race.FirstPractice)
+      rows.push({ label: 'FP1', session: race.FirstPractice });
+
+    if (race.SecondPractice) {
+      // Sprint weekend: SecondPractice slot is Sprint Qualifying
+      const isSprint = !!race.Sprint;
+      rows.push({
+        label: isSprint ? 'Sprint Quali' : 'FP2',
+        session: race.SecondPractice,
+        highlight: isSprint,
+      });
     }
-  };
 
-  const formatDateTime = (dateStr, timeStr) => {
-    const date = new Date(dateStr + 'T' + (timeStr || '00:00:00'));
-    return {
-      date: date.toLocaleDateString('th-TH', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      }),
-      time: timeStr ? date.toLocaleTimeString('th-TH', {
-        hour: '2-digit',
-        minute: '2-digit'
-      }) : 'TBA'
-    };
-  };
+    if (race.ThirdPractice)
+      rows.push({ label: 'FP3', session: race.ThirdPractice });
 
-  const isPastRace = (dateStr) => {
-    return new Date(dateStr) < new Date();
-  };
+    // SprintQualifying field (newer API versions)
+    if (race.SprintQualifying)
+      rows.push({ label: 'Sprint Quali', session: race.SprintQualifying, highlight: true });
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-2xl text-f1-red">Loading...</div>
-      </div>
-    );
-  }
+    if (race.Sprint)
+      rows.push({ label: 'Sprint', session: race.Sprint, highlight: true });
+
+    if (race.Qualifying)
+      rows.push({ label: 'Qualifying', session: race.Qualifying });
+
+    // Race itself
+    rows.push({
+      label: 'Race',
+      session: { date: race.date, time: race.time },
+      isRace: true,
+    });
+
+    return rows;
+  };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex items-center mb-8">
-        <Calendar className="text-f1-red w-8 h-8 mr-3" />
-        <h1 className="text-4xl font-bold">ตารางแข่ง F1 2026</h1>
-      </div>
+    <div className="f1-schedule-page">
+      <style>{SCOPED_CSS}</style>
 
-      {/* Schedule List */}
-      <div className="space-y-6">
-        {schedule.map((race, index) => {
-          const raceDate = formatDateTime(race.date, race.time);
-          const isPast = isPastRace(race.date);
-          
-          return (
-            <div 
-              key={race.round} 
-              className={`card p-6 ${isPast ? 'opacity-60' : ''}`}
-            >
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                {/* Race Info */}
-                <div className="flex-1">
-                  <div className="flex items-center mb-2">
-                    <span className="bg-f1-red text-white px-4 py-1 rounded-full text-sm font-bold mr-3">
-                      Round {race.round}
-                    </span>
-                    {isPast && (
-                      <span className="bg-gray-600 text-white px-3 py-1 rounded-full text-xs">
-                        จบแล้ว
-                      </span>
-                    )}
-                  </div>
-                  
-                  <h2 className="text-2xl font-bold mb-2 text-f1-red">
-                    {race.raceName}
-                  </h2>
-                  
-                  <div className="flex items-center text-f1-lightgray mb-2">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    <span>
-                      {race.Circuit.circuitName}, {race.Circuit.Location.locality}, {race.Circuit.Location.country}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center text-f1-lightgray">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    <span className="mr-4">{raceDate.date}</span>
-                    {race.time && (
-                      <>
-                        <Clock className="w-4 h-4 mr-2" />
-                        <span>{raceDate.time}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
+      {loading ? (
+        <div className="sp-loading">
+          <div className="sp-bar-track"><div className="sp-bar-fill" /></div>
+          <p className="sp-load-txt">Loading Schedule</p>
+        </div>
+      ) : (
+        <div className="sp-wrap">
+          <div className="sp-grid-bg" />
+          <div className="sp-glow" />
+          <div className="sp-inner">
 
-                {/* Session Details */}
-                <div className="mt-4 md:mt-0 md:ml-6 bg-f1-black rounded-lg p-4 min-w-[250px]">
-                  <h3 className="font-bold mb-3 text-f1-red">รอบการแข่งขัน</h3>
-                  
-                  <div className="space-y-2 text-sm">
-                    {race.FirstPractice && (
-                      <div className="flex justify-between">
-                        <span className="text-f1-lightgray">FP1:</span>
-                        <span>
-                          {formatDateTime(race.FirstPractice.date, race.FirstPractice.time).time}
-                        </span>
-                      </div>
-                    )}
-                    
-                    {race.SecondPractice && (
-                      <div className="flex justify-between">
-                        <span className="text-f1-lightgray">FP2:</span>
-                        <span>
-                          {formatDateTime(race.SecondPractice.date, race.SecondPractice.time).time}
-                        </span>
-                      </div>
-                    )}
-                    
-                    {race.ThirdPractice && (
-                      <div className="flex justify-between">
-                        <span className="text-f1-lightgray">FP3:</span>
-                        <span>
-                          {formatDateTime(race.ThirdPractice.date, race.ThirdPractice.time).time}
-                        </span>
-                      </div>
-                    )}
-                    
-                    {race.Sprint && (
-                      <div className="flex justify-between">
-                        <span className="text-f1-lightgray">Sprint:</span>
-                        <span>
-                          {formatDateTime(race.Sprint.date, race.Sprint.time).time}
-                        </span>
-                      </div>
-                    )}
-                    
-                    {race.Qualifying && (
-                      <div className="flex justify-between">
-                        <span className="text-f1-lightgray">Qualifying:</span>
-                        <span className="font-bold text-f1-red">
-                          {formatDateTime(race.Qualifying.date, race.Qualifying.time).time}
-                        </span>
-                      </div>
-                    )}
-                    
-                    <div className="flex justify-between pt-2 border-t border-f1-gray">
-                      <span className="text-f1-white font-bold">Race:</span>
-                      <span className="font-bold text-f1-red">
-                        {raceDate.time}
-                      </span>
-                    </div>
-
-                    {/* จำนวนรอบแข่ง */}
-                    {totalLaps[race.Circuit.circuitId] && (
-                      <div className="flex justify-between pt-2 border-t border-f1-gray mt-2">
-                        <span className="text-f1-lightgray">จำนวนรอบ:</span>
-                        <span className="font-bold text-f1-white">
-                          {totalLaps[race.Circuit.circuitId]} รอบ
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+            {/* Header */}
+            <header className="sp-hd">
+              <div className="sp-eyebrow">
+                <Calendar size={12} color="#e10600" />
+                <p className="sp-eyebrow-txt">Formula 1 Championship</p>
+                <div className="sp-eyebrow-line" />
               </div>
+              <h1 className="sp-title">
+                ตารางแข่ง <em>F1</em>
+                <span className="sp-badge">2026</span>
+              </h1>
+              <div className="sp-subtitle">
+                <span>{totalRaces} สนาม</span>
+                <span>•</span>
+                <span>จบแล้ว {pastCount} สนาม</span>
+                <span>•</span>
+                <span>เหลืออีก {totalRaces - pastCount} สนาม</span>
+              </div>
+              <div className="sp-ghost-num">{totalRaces}</div>
+            </header>
 
-              {/* Circuit Link */}
-              {race.Circuit.url && (
-                <div className="mt-4 flex items-center space-x-3">
-                  <a 
-                    href={race.Circuit.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-f1-red hover:underline text-sm inline-flex items-center"
+            {/* Race List */}
+            <div className="sp-list">
+              {schedule.map((race, index) => {
+                const past    = isPast(race.date);
+                const next    = isNext(schedule, index);
+                const isSprint = !!(race.Sprint);
+                const raceSession = fmtSession({ date: race.date, time: race.time });
+                const sessions = buildSessions(race);
+                const laps = TOTAL_LAPS[race.Circuit?.circuitId];
+
+                return (
+                  <div
+                    key={race.round}
+                    className={`sp-card${past ? ' past' : ''}${next ? ' next' : ''}`}
                   >
-                    📖 ข้อมูลสนาม →
-                  </a>
-                  
-                  {race.Circuit.Location?.lat && race.Circuit.Location?.long && (
-                    <a
-                      href={`https://www.google.com/maps?q=${race.Circuit.Location.lat},${race.Circuit.Location.long}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-f1-red hover:underline text-sm inline-flex items-center"
-                    >
-                      📍 ดูบน Maps →
-                    </a>
-                  )}
-                </div>
-              )}
+                    <div className="sp-card-bar" />
+                    <div className="sp-card-ghost">{String(race.round).padStart(2, '0')}</div>
+
+                    <div className="sp-card-inner">
+                      {/* LEFT */}
+                      <div>
+                        <div className="sp-race-top">
+                          <span className="sp-round-pill">Round {race.round}</span>
+                          {isSprint && <span className="sp-sprint-pill">🏃 Sprint</span>}
+                          {past  && <span className="sp-past-pill">จบแล้ว</span>}
+                          {next  && <span className="sp-next-pill">▶ ถัดไป</span>}
+                        </div>
+
+                        <h2 className="sp-race-name">{race.raceName}</h2>
+
+                        <div className="sp-circuit-row">
+                          <MapPin size={12} />
+                          <span>
+                            {race.Circuit?.circuitName}
+                            {race.Circuit?.Location?.locality ? `, ${race.Circuit.Location.locality}` : ''}
+                            {race.Circuit?.Location?.country  ? `, ${race.Circuit.Location.country}`  : ''}
+                          </span>
+                        </div>
+
+                        <div className="sp-race-datetime">
+                          <Calendar size={13} color="rgba(255,255,255,0.3)" />
+                          <span className="sp-race-date-main">{raceSession.dateStr}</span>
+                          {race.time && (
+                            <>
+                              <Clock size={13} color="rgba(255,255,255,0.3)" />
+                              <span className="sp-race-time-main">{raceSession.timeStr}</span>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Links */}
+                        <div className="sp-links">
+                          {race.Circuit?.url && (
+                            <a href={race.Circuit.url} target="_blank" rel="noopener noreferrer" className="sp-link">
+                              ข้อมูลสนาม <ChevronRight size={12} />
+                            </a>
+                          )}
+                          {race.Circuit?.Location?.lat && race.Circuit?.Location?.long && (
+                            <a
+                              href={`https://www.google.com/maps?q=${race.Circuit.Location.lat},${race.Circuit.Location.long}`}
+                              target="_blank" rel="noopener noreferrer" className="sp-link"
+                            >
+                              ดูบน Maps <ChevronRight size={12} />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* RIGHT: Sessions */}
+                      <div className="sp-sessions">
+                        <p className="sp-sessions-title">รอบการแข่งขัน</p>
+
+                        {sessions.map((s, i) => {
+                          const { dateStr, timeStr } = fmtSession(s.session);
+                          return (
+                            <div
+                              key={i}
+                              className={`sp-session-row${s.isRace ? ' race-row' : ''}`}
+                            >
+                              <span
+                                className="sp-session-label"
+                                style={s.highlight ? { color: '#ff9f00' } : {}}
+                              >
+                                {s.label}
+                              </span>
+                              <span className="sp-session-date">{dateStr}</span>
+                              <span className="sp-session-time">{timeStr}</span>
+                            </div>
+                          );
+                        })}
+
+                        {laps && (
+                          <div className="sp-laps-row">
+                            <span className="sp-laps-label">จำนวนรอบ</span>
+                            <span className="sp-laps-val">{laps} รอบ</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 };
