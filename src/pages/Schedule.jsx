@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Calendar, MapPin, Clock, ChevronRight, Flag } from 'lucide-react';
+import { Calendar, MapPin, Clock, ChevronRight, Flag, BarChart2 } from 'lucide-react';
 import { jolpicaApi } from '../services/f1Api';
+import RaceResult from './RaceResult'; // adjust import path if needed
 
 const SCOPED_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700&family=Barlow:wght@400;500;600&display=swap');
@@ -101,11 +102,10 @@ const SCOPED_CSS = `
     animation: sp-rise 0.4s ease both;
   }
   .f1-schedule-page .sp-card:hover { background: #17171c; }
-  .f1-schedule-page .sp-card.past { opacity: 0.5; }
-  .f1-schedule-page .sp-card.past:hover { opacity: 0.7; }
+  .f1-schedule-page .sp-card.past { opacity: 0.55; }
+  .f1-schedule-page .sp-card.past:hover { opacity: 0.85; }
   .f1-schedule-page .sp-card.next { border-color: rgba(225,6,0,0.35); }
 
-  /* next race glow */
   .f1-schedule-page .sp-card.next::before {
     content: '';
     position: absolute; inset: 0;
@@ -113,7 +113,6 @@ const SCOPED_CSS = `
     pointer-events: none;
   }
 
-  /* top accent bar */
   .f1-schedule-page .sp-card-bar {
     position: absolute; top: 0; left: 0; right: 0; height: 2px;
     background: #e10600; opacity: 0;
@@ -122,7 +121,6 @@ const SCOPED_CSS = `
   .f1-schedule-page .sp-card:hover .sp-card-bar { opacity: 1; }
   .f1-schedule-page .sp-card.next .sp-card-bar { opacity: 1; }
 
-  /* ghost round number */
   .f1-schedule-page .sp-card-ghost {
     position: absolute; right: -0.5rem; top: 50%; transform: translateY(-50%);
     font-family: 'Barlow Condensed', sans-serif;
@@ -197,9 +195,9 @@ const SCOPED_CSS = `
     font-size: 1.05rem; font-weight: 700; color: #e10600; letter-spacing: 0.02em;
   }
 
-  /* Map link */
+  /* Links row */
   .f1-schedule-page .sp-links {
-    display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;
+    display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap; align-items: center;
   }
   .f1-schedule-page .sp-link {
     display: inline-flex; align-items: center; gap: 0.3rem;
@@ -207,6 +205,19 @@ const SCOPED_CSS = `
     color: #e10600; text-decoration: none; transition: gap 0.2s ease;
   }
   .f1-schedule-page .sp-link:hover { gap: 0.55rem; }
+
+  /* ── RESULT BUTTON ───────────────────── */
+  .f1-schedule-page .sp-result-btn {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+    color: #fff;
+    background: rgba(225,6,0,0.75);
+    border: 1px solid rgba(225,6,0,0.5);
+    border-radius: 2px; padding: 0.4rem 0.9rem;
+    cursor: pointer; transition: background 0.2s ease;
+  }
+  .f1-schedule-page .sp-result-btn:hover { background: #e10600; }
 
   /* ── RIGHT: Sessions Panel ───────────── */
   .f1-schedule-page .sp-sessions {
@@ -243,42 +254,30 @@ const SCOPED_CSS = `
     font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
     color: rgba(255,255,255,0.38);
   }
-  .f1-schedule-page .sp-session-row.race-row .sp-session-label {
-    color: #e10600;
-  }
-  .f1-schedule-page .sp-session-date {
-    font-size: 0.75rem; color: rgba(255,255,255,0.45);
-  }
+  .f1-schedule-page .sp-session-row.race-row .sp-session-label { color: #e10600; }
+  .f1-schedule-page .sp-session-date { font-size: 0.75rem; color: rgba(255,255,255,0.45); }
   .f1-schedule-page .sp-session-time {
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 0.88rem; font-weight: 700; color: #ffffff; letter-spacing: 0.03em;
     text-align: right;
   }
-  .f1-schedule-page .sp-session-row.race-row .sp-session-time {
-    color: #e10600; font-size: 1rem;
-  }
+  .f1-schedule-page .sp-session-row.race-row .sp-session-time { color: #e10600; font-size: 1rem; }
   .f1-schedule-page .sp-laps-row {
     display: flex; justify-content: space-between; align-items: center;
     margin-top: 0.85rem; padding-top: 0.7rem;
     border-top: 1px solid rgba(255,255,255,0.06);
     font-size: 0.75rem;
   }
-  .f1-schedule-page .sp-laps-label {
-    color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.08em;
-  }
+  .f1-schedule-page .sp-laps-label { color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.08em; }
   .f1-schedule-page .sp-laps-val {
     font-family: 'Barlow Condensed', sans-serif;
     font-weight: 700; color: #fff; font-size: 0.9rem; letter-spacing: 0.05em;
   }
 
-  /* Responsive: stack on small screens */
+  /* Responsive */
   @media (max-width: 700px) {
-    .f1-schedule-page .sp-card-inner {
-      grid-template-columns: 1fr;
-    }
-    .f1-schedule-page .sp-sessions {
-      min-width: unset; width: 100%;
-    }
+    .f1-schedule-page .sp-card-inner { grid-template-columns: 1fr; }
+    .f1-schedule-page .sp-sessions { min-width: unset; width: 100%; }
   }
 
   /* ── LOADING ─────────────────────────── */
@@ -286,14 +285,8 @@ const SCOPED_CSS = `
     min-height: 55vh; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 1rem; background: #0a0a0c;
   }
-  .f1-schedule-page .sp-bar-track {
-    width: 200px; height: 2px;
-    background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden;
-  }
-  .f1-schedule-page .sp-bar-fill {
-    height: 100%; background: #e10600; border-radius: 2px;
-    animation: sp-slide 1.2s ease-in-out infinite;
-  }
+  .f1-schedule-page .sp-bar-track { width: 200px; height: 2px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+  .f1-schedule-page .sp-bar-fill { height: 100%; background: #e10600; border-radius: 2px; animation: sp-slide 1.2s ease-in-out infinite; }
   .f1-schedule-page .sp-load-txt {
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 0.72rem; font-weight: 600; letter-spacing: 0.3em;
@@ -312,29 +305,10 @@ const SCOPED_CSS = `
   .f1-schedule-page .sp-card:nth-child(8)  { animation-delay: 0.16s }
   .f1-schedule-page .sp-card:nth-child(9)  { animation-delay: 0.18s }
   .f1-schedule-page .sp-card:nth-child(10) { animation-delay: 0.20s }
-  .f1-schedule-page .sp-card:nth-child(11) { animation-delay: 0.22s }
-  .f1-schedule-page .sp-card:nth-child(12) { animation-delay: 0.24s }
-  .f1-schedule-page .sp-card:nth-child(13) { animation-delay: 0.26s }
-  .f1-schedule-page .sp-card:nth-child(14) { animation-delay: 0.28s }
-  .f1-schedule-page .sp-card:nth-child(15) { animation-delay: 0.30s }
-  .f1-schedule-page .sp-card:nth-child(16) { animation-delay: 0.32s }
-  .f1-schedule-page .sp-card:nth-child(17) { animation-delay: 0.34s }
-  .f1-schedule-page .sp-card:nth-child(18) { animation-delay: 0.36s }
-  .f1-schedule-page .sp-card:nth-child(19) { animation-delay: 0.38s }
-  .f1-schedule-page .sp-card:nth-child(20) { animation-delay: 0.40s }
-  .f1-schedule-page .sp-card:nth-child(21) { animation-delay: 0.42s }
-  .f1-schedule-page .sp-card:nth-child(22) { animation-delay: 0.44s }
-  .f1-schedule-page .sp-card:nth-child(23) { animation-delay: 0.46s }
-  .f1-schedule-page .sp-card:nth-child(24) { animation-delay: 0.48s }
+  .f1-schedule-page .sp-card:nth-child(n+11) { animation-delay: 0.22s }
 
-  @keyframes sp-slide {
-    0%   { transform: translateX(-100%); }
-    100% { transform: translateX(400%); }
-  }
-  @keyframes sp-rise {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+  @keyframes sp-slide { 0%{ transform: translateX(-100%) } 100%{ transform: translateX(400%) } }
+  @keyframes sp-rise  { from{ opacity:0; transform:translateY(16px) } to{ opacity:1; transform:translateY(0) } }
 `;
 
 const TOTAL_LAPS = {
@@ -346,7 +320,6 @@ const TOTAL_LAPS = {
   vegas: 50, losail: 57, yas_marina: 58,
 };
 
-// Format a session object {date, time} → { dateStr, timeStr }
 const fmtSession = (session) => {
   if (!session?.date) return { dateStr: '—', timeStr: '—' };
   const dt = new Date(session.date + 'T' + (session.time || '00:00:00'));
@@ -358,19 +331,22 @@ const fmtSession = (session) => {
   };
 };
 
-const isPast = (dateStr) => new Date(dateStr) < new Date();
+const isPast  = (dateStr) => new Date(dateStr) < new Date();
 
 const isNext = (races, index) => {
-  // First race that hasn't passed yet
   for (let i = 0; i < races.length; i++) {
     if (!isPast(races[i].date)) return i === index;
   }
   return false;
 };
 
+/* ─────────────────────────────────────────
+   SCHEDULE (with navigation to RaceResult)
+───────────────────────────────────────── */
 const Schedule = () => {
-  const [schedule, setSchedule] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [schedule,    setSchedule]    = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [selectedRace, setSelectedRace] = useState(null); // race object when viewing results
 
   useEffect(() => {
     jolpicaApi.getSchedule(2026)
@@ -379,46 +355,37 @@ const Schedule = () => {
       .finally(() => setLoading(false));
   }, []);
 
+  // If user picked a race, show RaceResult page
+  if (selectedRace) {
+    return (
+      <RaceResult
+        race={selectedRace}
+        season={2026}
+        onBack={() => setSelectedRace(null)}
+      />
+    );
+  }
+
   const totalRaces = schedule.length;
   const pastCount  = schedule.filter(r => isPast(r.date)).length;
 
-  // Build session rows for a race — includes SprintQualifying if present
   const buildSessions = (race) => {
     const rows = [];
-
     if (race.FirstPractice)
       rows.push({ label: 'FP1', session: race.FirstPractice });
-
     if (race.SecondPractice) {
-      // Sprint weekend: SecondPractice slot is Sprint Qualifying
       const isSprint = !!race.Sprint;
-      rows.push({
-        label: isSprint ? 'Sprint Quali' : 'FP2',
-        session: race.SecondPractice,
-        highlight: isSprint,
-      });
+      rows.push({ label: isSprint ? 'Sprint Quali' : 'FP2', session: race.SecondPractice, highlight: isSprint });
     }
-
     if (race.ThirdPractice)
       rows.push({ label: 'FP3', session: race.ThirdPractice });
-
-    // SprintQualifying field (newer API versions)
     if (race.SprintQualifying)
       rows.push({ label: 'Sprint Quali', session: race.SprintQualifying, highlight: true });
-
     if (race.Sprint)
       rows.push({ label: 'Sprint', session: race.Sprint, highlight: true });
-
     if (race.Qualifying)
       rows.push({ label: 'Qualifying', session: race.Qualifying });
-
-    // Race itself
-    rows.push({
-      label: 'Race',
-      session: { date: race.date, time: race.time },
-      isRace: true,
-    });
-
+    rows.push({ label: 'Race', session: { date: race.date, time: race.time }, isRace: true });
     return rows;
   };
 
@@ -508,7 +475,7 @@ const Schedule = () => {
                           )}
                         </div>
 
-                        {/* Links */}
+                        {/* Links + Result button */}
                         <div className="sp-links">
                           {race.Circuit?.url && (
                             <a href={race.Circuit.url} target="_blank" rel="noopener noreferrer" className="sp-link">
@@ -522,6 +489,17 @@ const Schedule = () => {
                             >
                               ดูบน Maps <ChevronRight size={12} />
                             </a>
+                          )}
+
+                          {/* ── Result button — only for past races ── */}
+                          {past && (
+                            <button
+                              className="sp-result-btn"
+                              onClick={() => setSelectedRace(race)}
+                            >
+                              <BarChart2 size={12} />
+                              ดูผลการแข่งขัน
+                            </button>
                           )}
                         </div>
                       </div>
