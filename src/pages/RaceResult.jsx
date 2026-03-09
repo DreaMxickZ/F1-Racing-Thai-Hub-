@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronLeft, Zap, Flag, Timer, AlertTriangle, Clock, Loader } from 'lucide-react';
+import { ChevronLeft, Zap, Flag, Timer, AlertTriangle, Clock, Loader, Info } from 'lucide-react';
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Russo+One&family=DM+Mono:wght@400;500&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:ital,wght@0,700;0,800;0,900;1,800&display=swap');
@@ -21,7 +21,7 @@ const CSS = `
 .rr4-hero-meta { display:flex;flex-wrap:wrap;gap:1.5rem;align-items:center;font-family:'DM Mono',monospace;font-size:0.82rem;color:rgba(255,255,255,0.3); }
 .rr4-hero-meta > span { display:flex;align-items:center;gap:0.4rem; }
 .rr4-sprint-badge { background:#e10600;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;padding:0.25rem 0.75rem;border-radius:2px; }
-.rr4-tab-groups { display:flex;flex-direction:column;gap:6px;margin-bottom:2.5rem; }
+.rr4-tab-groups { display:flex;flex-direction:column;gap:6px;margin-bottom:1.25rem; }
 .rr4-group-label { font-family:'Barlow Condensed',sans-serif;font-size:0.68rem;font-weight:800;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.2);padding:0 2px;margin-bottom:2px; }
 .rr4-tab-row { display:flex;gap:2px;background:rgba(255,255,255,0.04);border-radius:3px;padding:3px;flex-wrap:wrap; }
 .rr4-tab { flex:1;font-family:'Barlow Condensed',sans-serif;font-size:0.95rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;background:transparent;border:none;border-radius:2px;color:rgba(255,255,255,0.3);cursor:pointer;padding:0.72rem 0.75rem;transition:all 0.2s;white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:0.35rem; }
@@ -32,6 +32,23 @@ const CSS = `
 .rr4-tab.tyre-tab.active { background:rgba(255,230,0,0.85);color:#000; }
 .rr4-tab-dot { width:5px;height:5px;border-radius:50%;background:rgba(0,210,120,0.7);flex-shrink:0; }
 .rr4-tab.active .rr4-tab-dot { background:rgba(255,255,255,0.6); }
+
+/* ── API Disclaimer Banner ── */
+.rr4-api-disclaimer {
+  display:flex;align-items:flex-start;gap:0.65rem;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.07);
+  border-left:2px solid rgba(255,200,0,0.35);
+  border-radius:3px;
+  padding:0.65rem 0.9rem;
+  margin-bottom:2rem;
+  font-family:'DM Mono',monospace;font-size:0.72rem;
+  color:rgba(255,255,255,0.22);line-height:1.6;
+}
+.rr4-api-disclaimer-icon { flex-shrink:0;margin-top:1px;color:rgba(255,200,0,0.4); }
+.rr4-api-disclaimer strong { color:rgba(255,200,0,0.5);font-size:0.74rem; }
+.rr4-api-disclaimer-sep { margin:0 0.4em;color:rgba(255,255,255,0.1); }
+
 .rr4-sec-hd { display:flex;align-items:center;gap:0.75rem;margin-bottom:1.35rem; }
 .rr4-sec-title { font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;font-weight:800;letter-spacing:0.25em;text-transform:uppercase;color:rgba(255,255,255,0.25);white-space:nowrap; }
 .rr4-sec-line { flex:1;height:1px;background:rgba(255,255,255,0.06); }
@@ -132,6 +149,15 @@ const CSS = `
 .rr4-empty{text-align:center;padding:4rem 2rem;font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.15);}
 .rr4-warn{display:flex;align-items:flex-start;gap:0.75rem;background:rgba(255,140,0,0.07);border:1px solid rgba(255,140,0,0.2);border-radius:3px;padding:0.9rem 1.1rem;margin-bottom:1.5rem;font-size:0.88rem;color:rgba(255,255,255,0.4);line-height:1.6;}
 .rr4-warn strong{color:rgba(255,200,0,0.8);display:block;margin-bottom:0.1rem;}
+
+/* ── AVG lap time cell ── */
+.rr4-avg-td{font-family:'DM Mono',monospace;font-size:0.9rem;font-weight:500;text-align:right;white-space:nowrap;color:rgba(255,255,255,0.38);}
+.rr4-avg-td.best-avg{color:rgba(100,210,255,0.8);}
+/* ── AVG summary bar (LapTable, single driver view) ── */
+.rr4-avg-bar{display:flex;align-items:center;gap:0.75rem;background:rgba(80,180,255,0.05);border:1px solid rgba(80,180,255,0.12);border-radius:3px;padding:0.6rem 1rem;margin-bottom:1rem;font-family:'DM Mono',monospace;font-size:0.82rem;color:rgba(255,255,255,0.3);}
+.rr4-avg-bar strong{color:rgba(100,210,255,0.75);font-size:0.88rem;}
+.rr4-avg-label{font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.18);}
+
 @keyframes rr4-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes rr4-slide{0%{transform:translateX(-100%)}100%{transform:translateX(400%)}}
 @media(max-width:680px){
@@ -177,6 +203,40 @@ const posClass = p => ({'1':'p1','2':'p2','3':'p3'}[p]??'');
 const fmtDate  = d => d ? new Date(d).toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'}) : '';
 const toMMSS   = s => { const m=Math.floor(s/60); return `${m}:${(s%60).toFixed(3).padStart(6,'0')}`; };
 
+/* ─── compute per-driver avg from lap array (exclude outliers > 115% of fastest) ─── */
+const computeAvgMap = (laps) => {
+  const byDriver = {};
+  laps.forEach(l => {
+    if (!l.lap_duration || l.lap_duration <= 0) return;
+    const k = String(l.driver_number);
+    if (!byDriver[k]) byDriver[k] = [];
+    byDriver[k].push(l.lap_duration);
+  });
+  const result = {};
+  Object.entries(byDriver).forEach(([k, times]) => {
+    if (!times.length) return;
+    const fastest = Math.min(...times);
+    const valid = times.filter(t => t <= fastest * 1.15); // drop pit/SC laps
+    result[k] = valid.reduce((a, b) => a + b, 0) / valid.length;
+  });
+  return result;
+};
+
+/* ═══ API DISCLAIMER BANNER ═══ */
+const ApiDisclaimer = () => (
+  <div className="rr4-api-disclaimer">
+    <Info size={13} className="rr4-api-disclaimer-icon"/>
+    <div>
+      <strong>Free API · ข้อมูลอาจไม่ใช่ Real-time</strong>
+      {'  '}ข้อมูลนี้ดึงมาจาก OpenF1 และ Jolpica-Ergast ซึ่งเป็น API สาธารณะแบบไม่เสียค่าใช้จ่าย
+      <span className="rr4-api-disclaimer-sep">·</span>
+      อาจมีความล่าช้าหรือ fetch ไม่ได้บางครั้ง
+      <span className="rr4-api-disclaimer-sep">·</span>
+      หากข้อมูลไม่โหลด ให้ลองกดแท็บใหม่อีกครั้ง
+    </div>
+  </div>
+);
+
 /* ═══ SHARED UI ═══ */
 const DrvCell = ({ last, first, num, color, h=40 }) => (
   <div className="rr4-drv">
@@ -214,7 +274,7 @@ const CompoundPill = ({ compound, laps }) => {
   );
 };
 
-/* ═══ INLINE TYRE BAR — shared by QualTable & PracticeTable ═══ */
+/* ═══ INLINE TYRE BAR ═══ */
 const InlineTyreBar = ({ stintMap, driverKey, totalLaps, hovered, setHovered, minWidth='90px' }) => {
   const ds = stintMap[String(driverKey)] ?? [];
   if (!ds.length)
@@ -273,7 +333,7 @@ const InlineTyreBar = ({ stintMap, driverKey, totalLaps, hovered, setHovered, mi
   );
 };
 
-/* ═══ TYRE STRIP — mini inline stint bars for race table ═══ */
+/* ═══ TYRE STRIP ═══ */
 const TyreStrip = ({ stints, totalLaps }) => {
   const [hov, setHov] = useState(null);
   if (!stints?.length) return <span style={{color:'rgba(255,255,255,0.1)',fontSize:'0.7rem'}}>—</span>;
@@ -320,7 +380,7 @@ const TyreStrip = ({ stints, totalLaps }) => {
   );
 };
 
-/* ═══ TYRE TIMELINE (full strategy view) ═══ */
+/* ═══ TYRE TIMELINE ═══ */
 const TyreTimeline = ({ stints, drivers, sortKeys=null, sessionLabel='Race', showDetailTable=true }) => {
   const [hovered, setHovered] = useState(null);
   if(!stints.length) return <div className="rr4-empty">ไม่พบข้อมูล Tyre Stints สำหรับ {sessionLabel}</div>;
@@ -415,7 +475,6 @@ const TyreTimeline = ({ stints, drivers, sortKeys=null, sessionLabel='Race', sho
               <tbody>
                 {driverNums.flatMap(num=>{
                   const ds=byDriver[num]??[],d=dMap[num];
-                  const dColor=d?.team_colour?`#${d.team_colour}`:'#555';
                   return ds.map((stint,si)=>{
                     const lapsIn=(stint.lap_end??totalLaps)-(stint.lap_start??1)+1;
                     const age=stint.tyre_age_at_start??0;
@@ -539,7 +598,7 @@ const RaceTable = ({ results, showPts=true, stints=[] }) => {
   );
 };
 
-/* ═══ QUAL TABLE — with inline tyre bars ═══ */
+/* ═══ QUAL TABLE ═══ */
 const QualTable = ({ results, allDrivers=[], label='Qualifying', stints=[] }) => {
   const [hovered, setHovered] = useState(null);
 
@@ -622,7 +681,7 @@ const QualTable = ({ results, allDrivers=[], label='Qualifying', stints=[] }) =>
   );
 };
 
-/* ═══ PRACTICE TABLE — unified tyre + time ═══ */
+/* ═══ PRACTICE TABLE ═══ */
 const PracticeTable = ({ laps, stints, drivers, sessionName }) => {
   const [hovered, setHovered] = useState(null);
 
@@ -682,18 +741,37 @@ const PracticeTable = ({ laps, stints, drivers, sessionName }) => {
   );
 };
 
-/* ═══ LAP TABLE ═══ */
+/* ═══ LAP TABLE — with AVG per driver ═══ */
 const LapTable = ({ laps, drivers }) => {
   const [sel,setSel]=useState('ALL');
   if(!laps.length) return <div className="rr4-empty">ไม่พบข้อมูล Lap Times จาก OpenF1</div>;
+
   const dMap={};
   drivers.forEach(d=>{dMap[d.driver_number]=d;});
+
+  // ── compute AVG map (exclude outlier laps > 115% of each driver's fastest) ──
+  const avgMap = computeAvgMap(laps);
+  // find best avg among all drivers (for highlighting)
+  const avgVals = Object.values(avgMap).filter(Boolean);
+  const bestAvg = avgVals.length ? Math.min(...avgVals) : null;
+
   const filtered=sel==='ALL'?laps:laps.filter(l=>String(l.driver_number)===sel);
   const durs=laps.map(l=>l.lap_duration).filter(v=>v&&v>0);
   const gMin=Math.min(...durs),gMax=Math.max(...durs.filter(v=>v<gMin*1.15));
   const range=gMax-gMin||1;
   const uniq=[...new Set(laps.map(l=>String(l.driver_number)))].sort((a,b)=>+a-+b);
   const fmtS=v=>v!=null?v.toFixed(3):'—';
+
+  // ── single-driver avg summary bar ──
+  const selAvg = sel !== 'ALL' ? avgMap[sel] : null;
+
+  // ── ALL-view: per-driver summary rows sorted by fastest lap ──
+  const driverSummaries = uniq.map(num => {
+    const driverLaps = laps.filter(l => String(l.driver_number) === num && l.lap_duration > 0);
+    const fastest = driverLaps.length ? Math.min(...driverLaps.map(l => l.lap_duration)) : null;
+    return { num, fastest, avg: avgMap[num] ?? null, count: driverLaps.length };
+  }).sort((a, b) => (a.fastest ?? 999) - (b.fastest ?? 999));
+
   return (
     <>
       <div className="rr4-lap-filter">
@@ -704,9 +782,83 @@ const LapTable = ({ laps, drivers }) => {
           return <button key={num} className={`rr4-fbtn ${sel===num?'active':''}`} onClick={()=>setSel(num)} style={sel===num&&c?{borderColor:c,color:c}:{}}>{d?.name_acronym??`#${num}`}</button>;
         })}
       </div>
+
+      {/* ── Single driver AVG bar ── */}
+      {sel !== 'ALL' && selAvg != null && (
+        <div className="rr4-avg-bar">
+          <span style={{fontSize:'1rem'}}>⏱</span>
+          <span className="rr4-avg-label">เฉลี่ย (AVG)</span>
+          <strong>{toMMSS(selAvg)}</strong>
+          <span style={{color:'rgba(255,255,255,0.15)',fontSize:'0.68rem'}}>
+            · คำนวณจากรอบปกติ (ตัดรอบ Pit / SC ออก)
+          </span>
+        </div>
+      )}
+
+      {/* ── ALL view: driver AVG summary table ── */}
+      {sel === 'ALL' && driverSummaries.length > 0 && (
+        <div style={{marginBottom:'1.75rem'}}>
+          <div className="rr4-sec-hd" style={{marginBottom:'0.75rem'}}>
+            <span className="rr4-sec-title">สรุปเฉลี่ย Lap Time ต่อนักแข่ง</span>
+            <div className="rr4-sec-line"/>
+            <span className="rr4-sec-badge">AVG</span>
+          </div>
+          <div className="rr4-tbl-wrap">
+            <table className="rr4-tbl" style={{minWidth:'360px'}}>
+              <thead><tr>
+                <th className="c">P</th>
+                <th>นักแข่ง</th>
+                <th className="r">Fastest Lap</th>
+                <th className="r">AVG Lap</th>
+                <th className="c">รอบที่ใช้คำนวณ</th>
+              </tr></thead>
+              <tbody>
+                {driverSummaries.map((ds, i) => {
+                  const d = dMap[ds.num];
+                  const color = d?.team_colour ? `#${d.team_colour}` : '#555';
+                  const isBestAvg = ds.avg != null && bestAvg != null && Math.abs(ds.avg - bestAvg) < 0.001;
+                  return (
+                    <tr key={ds.num} style={{animationDelay:`${i*0.02}s`}}>
+                      <td className={`rr4-pos ${i===0?'p1':i===1?'p2':i===2?'p3':''}`}>{i+1}</td>
+                      <td>
+                        <DrvCell
+                          last={d?.last_name ?? d?.full_name?.split(' ').pop() ?? `#${ds.num}`}
+                          first={d?.first_name ?? ''}
+                          num={ds.num}
+                          color={color}
+                        />
+                      </td>
+                      <td className={`rr4-t ${i===0?'p1t':''}`}>
+                        {ds.fastest ? toMMSS(ds.fastest) : '—'}
+                        {i===0 && <span className="rr4-fl"><Zap size={9}/> FL</span>}
+                      </td>
+                      <td className={`rr4-avg-td ${isBestAvg ? 'best-avg' : ''}`}>
+                        {ds.avg ? toMMSS(ds.avg) : '—'}
+                        {isBestAvg && <span style={{marginLeft:'0.35rem',fontFamily:"'Barlow Condensed',sans-serif",fontSize:'0.68rem',fontWeight:800,letterSpacing:'0.08em',color:'rgba(100,210,255,0.7)'}}>BEST AVG</span>}
+                      </td>
+                      <td className="rr4-laps-td">{ds.count}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div style={{marginTop:'0.5rem',fontFamily:"'DM Mono',monospace",fontSize:'0.68rem',color:'rgba(255,255,255,0.15)',paddingLeft:'0.2rem'}}>
+            * AVG คำนวณจากรอบปกติเท่านั้น (ตัดรอบที่ช้ากว่า fastest +15% ออก เพื่อลด Pit / Safety Car)
+          </div>
+        </div>
+      )}
+
+      {/* ── Raw lap table ── */}
       <div className="rr4-tbl-wrap">
         <table className="rr4-tbl">
-          <thead><tr><th className="c">Lap</th>{sel==='ALL'&&<th>นักแข่ง</th>}<th className="r">เวลา (วิ)</th><th>กราฟ</th><th className="c">S1</th><th className="c">S2</th><th className="c">S3</th></tr></thead>
+          <thead><tr>
+            <th className="c">Lap</th>
+            {sel==='ALL'&&<th>นักแข่ง</th>}
+            <th className="r">เวลา (วิ)</th>
+            <th>กราฟ</th>
+            <th className="c">S1</th><th className="c">S2</th><th className="c">S3</th>
+          </tr></thead>
           <tbody>
             {filtered.slice(0,100).map((lap,i)=>{
               const dur=lap.lap_duration,isFastest=dur===gMin;
@@ -750,11 +902,9 @@ const PitTable = ({ pits, drivers, stints=[] }) => {
   const minP=Math.min(...times),maxP=Math.max(...times);
   const pitCls=d=>!d?'normal':d<=minP*1.06?'fast':d>=maxP*0.9?'slow':'normal';
 
-  // group pits by driver
   const pitsByDriver={};
   pits.forEach(p=>{const k=String(p.driver_number);if(!pitsByDriver[k])pitsByDriver[k]=[];pitsByDriver[k].push(p);});
 
-  // sort drivers by first pit lap
   const driverOrder=[...new Set(pits.map(p=>String(p.driver_number)))]
     .sort((a,b)=>(pitsByDriver[a][0]?.lap_number??0)-(pitsByDriver[b][0]?.lap_number??0));
 
@@ -777,7 +927,6 @@ const PitTable = ({ pits, drivers, stints=[] }) => {
 
             return (
               <tr key={num} style={{animationDelay:`${ri*0.025}s`}}>
-                {/* Driver */}
                 <td style={{minWidth:'130px'}}>
                   <DrvCell
                     last={d?.last_name??d?.full_name?.split(' ').pop()??`#${num}`}
@@ -785,11 +934,8 @@ const PitTable = ({ pits, drivers, stints=[] }) => {
                     color={color} h={32}
                   />
                 </td>
-
-                {/* Strategy bar + pit markers */}
                 <td style={{minWidth:'200px',paddingTop:'0.75rem',paddingBottom:'0.75rem'}}>
                   <div style={{position:'relative',height:'28px'}}>
-                    {/* Stint blocks */}
                     {ds.map((stint,si)=>{
                       const t=tyreCol(stint.compound);
                       const start=(stint.lap_start??1)-1;
@@ -818,8 +964,6 @@ const PitTable = ({ pits, drivers, stints=[] }) => {
                         </div>
                       );
                     })}
-
-                    {/* Pit markers */}
                     {driverPits.map((p,pi)=>{
                       const left=(p.lap_number/totalLaps)*100;
                       const cls=pitCls(p.pit_duration);
@@ -831,13 +975,10 @@ const PitTable = ({ pits, drivers, stints=[] }) => {
                           onMouseEnter={()=>setHovered({num,pi})}
                           onMouseLeave={()=>setHovered(null)}
                         >
-                          {/* marker line */}
                           <div style={{width:'2px',height:'100%',background:markerColor,borderRadius:'1px',boxShadow:`0 0 4px ${markerColor}`}}/>
-                          {/* lap label */}
                           <div style={{position:'absolute',top:'-14px',fontFamily:"'DM Mono',monospace",fontSize:'0.55rem',color:markerColor,whiteSpace:'nowrap',fontWeight:700}}>
                             L{p.lap_number}
                           </div>
-                          {/* tooltip */}
                           {isHov&&(
                             <div style={{position:'absolute',bottom:'calc(100% + 8px)',left:'50%',transform:'translateX(-50%)',background:'#1a1a1f',border:`1px solid ${markerColor}66`,borderRadius:'4px',padding:'0.45rem 0.7rem',whiteSpace:'nowrap',zIndex:300,pointerEvents:'none',fontFamily:"'DM Mono',monospace",fontSize:'0.72rem',color:'rgba(255,255,255,0.75)',lineHeight:1.7,boxShadow:'0 6px 20px rgba(0,0,0,0.8)'}}>
                               <div style={{color:'#fff',fontWeight:700,marginBottom:'0.15rem'}}>🔧 Pit Stop #{pi+1}</div>
@@ -850,13 +991,9 @@ const PitTable = ({ pits, drivers, stints=[] }) => {
                     })}
                   </div>
                 </td>
-
-                {/* Stop count */}
                 <td style={{textAlign:'right',fontFamily:"'Russo One',sans-serif",fontSize:'1.1rem',color:'rgba(255,255,255,0.4)'}}>
                   {driverPits.length}
                 </td>
-
-                {/* Fastest pit time */}
                 <td className={`rr4-pit-dur ${pitCls(fastestPit?.pit_duration)}`} style={{textAlign:'right'}}>
                   {fastestPit?.pit_duration!=null?fastestPit.pit_duration.toFixed(3):'—'}
                   {pitCls(fastestPit?.pit_duration)==='fast'&&<span className="rr4-pit-lbl" style={{color:'#00d4aa'}}>FAST</span>}
@@ -898,17 +1035,16 @@ const RaceResult = ({ race, season=2025, onBack }) => {
   const [fp2Stints,     setFp2Stints]     = useState([]);
   const [fp3Stints,     setFp3Stints]     = useState([]);
 
-  const [drivers,     setDrivers]     = useState({});  // { session_key: [...] }
-  const driversRef  = useRef({});                      // sync mirror for fetchForSession check
+  const [drivers,     setDrivers]     = useState({});
+  const driversRef  = useRef({});
 
   const fetched     = useRef(new Set());
   const sessionsRef = useRef(null);
-  const skeyRef     = useRef({});  // { sessionName -> session_key }
+  const skeyRef     = useRef({});
 
   const isSprint = !!(race?.Sprint);
   const round    = race?.round;
 
-  /* ── Initial load ── */
   useEffect(()=>{
     if(!round) return;
     fetched.current.clear();
@@ -934,7 +1070,6 @@ const RaceResult = ({ race, season=2025, onBack }) => {
         const raceTs=new Date(race.date).getTime();
         const weekend=all.filter(s=>Math.abs(new Date(s.date_start).getTime()-raceTs)<5*86400000);
         sessionsRef.current=weekend;
-        // cache session keys for later driver lookup
         weekend.forEach(s=>{skeyRef.current[s.session_name?.toLowerCase()]=s.session_key;});
 
         const raceKey=weekend.find(s=>s.session_name?.toLowerCase()==='race')?.session_key??null;
@@ -953,7 +1088,6 @@ const RaceResult = ({ race, season=2025, onBack }) => {
       .finally(()=>setInit(false));
   },[season,round,isSprint]);
 
-  /* ── Auto-load race stints when init finishes (default tab = race) ── */
   useEffect(()=>{
     if(!initLoading && tab==='race') loadTab('race');
   },[initLoading]);
@@ -980,7 +1114,6 @@ const RaceResult = ({ race, season=2025, onBack }) => {
       const fetchForSession=async(sessionName,fetchFn)=>{
         const key=getKey(sessions,sessionName);
         if(!key) return;
-        // always await drivers + data together so UI never renders before drivers arrive
         const needDrivers=!driversRef.current[key];
         const promises=[fetchFn(key)];
         if(needDrivers) promises.push(
@@ -1067,7 +1200,6 @@ const RaceResult = ({ race, season=2025, onBack }) => {
   const getTabDrivers=(sessionName)=>{
     const key=skeyRef.current[sessionName?.toLowerCase()];
     if(key&&drivers[key]?.length) return drivers[key];
-    // fallback: return first available drivers set (e.g. race drivers)
     const first=Object.values(drivers).find(arr=>arr?.length);
     return first??[];
   };
@@ -1143,6 +1275,9 @@ const RaceResult = ({ race, season=2025, onBack }) => {
               </div>
             ))}
           </div>
+
+          {/* ── API Disclaimer ── */}
+          <ApiDisclaimer />
 
           {warn&&<div className="rr4-warn"><AlertTriangle size={16} color="#ffa500" style={{flexShrink:0,marginTop:2}}/><div><strong>OpenF1 Notice</strong>{warn}</div></div>}
 
