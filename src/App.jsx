@@ -15,6 +15,8 @@ import Circuits from './pages/Circuits';
 import Schedule from './pages/Schedule';
 import Standings from './pages/Standings';
 import Login from './pages/Login';
+import Knowledge from './pages/Knowledge';
+import Results from './pages/Results';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -42,6 +44,9 @@ function App() {
               <Route path="/schedule" element={<Schedule />} />
               <Route path="/standings" element={<Standings />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/knowledge" element={<Knowledge />} />
+              <Route path="/results" element={<Results />} />
+
               
               {/* Protected Admin Routes */}
               <Route path="/admin" element={
