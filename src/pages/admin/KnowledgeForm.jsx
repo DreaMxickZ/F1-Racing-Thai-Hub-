@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Save, Image as Img, Plus, Trash2,
   AlignLeft, Quote, Heading2, Heading3, Minus,
-  GripVertical, Eye, EyeOff
+  GripVertical, Eye, EyeOff, Table
 } from 'lucide-react';
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragOverlay
@@ -149,6 +149,84 @@ const S = `
 .kf-img-cap{width:100%;background:transparent;border:none;border-top:1px solid var(--bd);color:var(--t3);font-size:0.78rem;font-style:italic;padding:0.38rem 0.5rem;outline:none;margin-top:0.25rem;}
 .kf-img-cap::placeholder{color:rgba(255,255,255,0.1);}
 
+/* ── TABLE BLOCK ── */
+.kf-table-blk{padding:0.5rem 0.5rem 0.75rem;}
+
+.kf-table-ctrl{
+  display:flex;align-items:center;gap:0.35rem;margin-bottom:0.6rem;flex-wrap:wrap;
+}
+.kf-table-ctrl-lbl{
+  font-family:'Barlow Condensed',sans-serif;font-size:0.58rem;font-weight:800;
+  letter-spacing:0.22em;text-transform:uppercase;color:var(--t3);
+  padding-right:0.3rem;white-space:nowrap;
+}
+.kf-tcb{
+  display:inline-flex;align-items:center;gap:0.25rem;
+  font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;font-weight:700;
+  letter-spacing:0.1em;text-transform:uppercase;
+  background:var(--s3);border:1px solid var(--bd2);
+  color:var(--t2);padding:0.26rem 0.55rem;cursor:pointer;transition:all 0.15s;
+}
+.kf-tcb:hover{border-color:var(--red);color:#fff;background:rgba(225,6,0,0.08);}
+.kf-tcb.del:hover{border-color:rgba(225,6,0,0.5);color:var(--red);}
+
+.kf-table-wrap{overflow-x:auto;}
+.kf-table{
+  width:100%;border-collapse:collapse;
+  font-family:'Barlow',sans-serif;font-size:0.88rem;
+  min-width:320px;
+}
+.kf-table th{
+  background:rgba(225,6,0,0.07);
+  border:1px solid var(--bd2);
+  position:relative;
+}
+.kf-table td{
+  border:1px solid rgba(255,255,255,0.07);
+  position:relative;
+  transition:background 0.12s;
+}
+.kf-table td:focus-within{background:rgba(255,255,255,0.025);}
+.kf-table th:focus-within{background:rgba(225,6,0,0.11);}
+
+.kf-tcell{
+  width:100%;background:transparent;border:none;outline:none;
+  color:var(--txt);padding:0.48rem 0.6rem;
+  font-family:'Barlow',sans-serif;font-size:0.88rem;
+  min-width:80px;
+}
+.kf-tcell-head{
+  font-weight:700;color:rgba(255,255,255,0.8);
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:0.82rem;letter-spacing:0.07em;text-transform:uppercase;
+}
+.kf-tcell::placeholder{color:rgba(255,255,255,0.1);}
+
+.kf-table-del-col{
+  position:absolute;top:2px;right:2px;
+  width:14px;height:14px;border:none;
+  background:rgba(225,6,0,0.0);color:transparent;
+  cursor:pointer;font-size:10px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;border-radius:2px;
+  opacity:0;
+}
+.kf-table th:hover .kf-table-del-col{opacity:1;color:var(--red);background:rgba(225,6,0,0.12);}
+
+.kf-table-del-row{
+  position:absolute;right:-20px;top:50%;transform:translateY(-50%);
+  width:16px;height:16px;border:none;
+  background:transparent;color:transparent;
+  cursor:pointer;font-size:10px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.15s;border-radius:2px;
+  opacity:0;
+}
+.kf-table tr:hover .kf-table-del-row{opacity:1;color:var(--red);}
+.kf-table-del-row:hover{background:rgba(225,6,0,0.12);}
+
+.kf-table-row-wrap{position:relative;}
+
 /* ── SIDEBAR ── */
 .kf-sb{display:flex;flex-direction:column;gap:1rem;position:sticky;top:1rem;}
 .kf-panel{background:var(--s1);border:1px solid var(--bd);overflow:hidden;}
@@ -179,18 +257,148 @@ const S = `
 
 /* ── Block Types ── */
 const BT = [
-  {type:'paragraph',label:'ข้อความ',   icon:AlignLeft},
-  {type:'h2',       label:'H2',         icon:Heading2},
-  {type:'h3',       label:'H3',         icon:Heading3},
-  {type:'quote',    label:'Quote',      icon:Quote},
-  {type:'image',    label:'รูปภาพ',     icon:Img},
-  {type:'divider',  label:'เส้นคั่น',  icon:Minus},
+  {type:'paragraph', label:'ข้อความ',  icon:AlignLeft},
+  {type:'h2',        label:'H2',        icon:Heading2},
+  {type:'h3',        label:'H3',        icon:Heading3},
+  {type:'quote',     label:'Quote',     icon:Quote},
+  {type:'image',     label:'รูปภาพ',    icon:Img},
+  {type:'divider',   label:'เส้นคั่น', icon:Minus},
+  {type:'table',     label:'ตาราง',     icon:Table},
 ];
-const nb = (type='paragraph') => ({id:crypto.randomUUID(),type,content:'',url:'',caption:''});
+
+const nb = (type = 'paragraph') => ({
+  id: crypto.randomUUID(),
+  type,
+  content: '',
+  url: '',
+  caption: '',
+  tableData: type === 'table'
+    ? { headers: ['คอลัมน์ 1', 'คอลัมน์ 2', 'คอลัมน์ 3'], rows: [['', '', ''], ['', '', '']] }
+    : null,
+});
+
+/* ── Table Block Component ── */
+function TableBlock({ block, onUpdate }) {
+  const { tableData } = block;
+  const up = (p) => onUpdate(block.id, p);
+
+  const addCol = () => {
+    up({
+      tableData: {
+        headers: [...tableData.headers, `คอลัมน์ ${tableData.headers.length + 1}`],
+        rows: tableData.rows.map(r => [...r, '']),
+      }
+    });
+  };
+
+  const delCol = (ci) => {
+    if (tableData.headers.length <= 1) return;
+    up({
+      tableData: {
+        headers: tableData.headers.filter((_, i) => i !== ci),
+        rows: tableData.rows.map(r => r.filter((_, i) => i !== ci)),
+      }
+    });
+  };
+
+  const addRow = () => {
+    up({
+      tableData: {
+        ...tableData,
+        rows: [...tableData.rows, Array(tableData.headers.length).fill('')],
+      }
+    });
+  };
+
+  const delRow = (ri) => {
+    if (tableData.rows.length <= 1) return;
+    up({ tableData: { ...tableData, rows: tableData.rows.filter((_, i) => i !== ri) } });
+  };
+
+  const setHeader = (ci, val) => {
+    const headers = tableData.headers.map((h, i) => i === ci ? val : h);
+    up({ tableData: { ...tableData, headers } });
+  };
+
+  const setCell = (ri, ci, val) => {
+    const rows = tableData.rows.map((r, i) =>
+      i === ri ? r.map((c, j) => j === ci ? val : c) : r
+    );
+    up({ tableData: { ...tableData, rows } });
+  };
+
+  return (
+    <div className="kf-table-blk">
+      {/* Controls */}
+      <div className="kf-table-ctrl">
+        <span className="kf-table-ctrl-lbl">ตาราง</span>
+        <button className="kf-tcb" onClick={addCol}><Plus size={10}/>คอลัมน์</button>
+        <button className="kf-tcb" onClick={addRow}><Plus size={10}/>แถว</button>
+        {tableData.rows.length > 1 &&
+          <button className="kf-tcb del" onClick={() => delRow(tableData.rows.length - 1)}>
+            <Minus size={10}/>แถว
+          </button>
+        }
+        {tableData.headers.length > 1 &&
+          <button className="kf-tcb del" onClick={() => delCol(tableData.headers.length - 1)}>
+            <Minus size={10}/>คอลัมน์
+          </button>
+        }
+      </div>
+
+      {/* Table */}
+      <div className="kf-table-wrap">
+        <table className="kf-table">
+          <thead>
+            <tr>
+              {tableData.headers.map((h, ci) => (
+                <th key={ci}>
+                  <input
+                    className="kf-tcell kf-tcell-head"
+                    value={h}
+                    placeholder={`หัว ${ci + 1}`}
+                    onChange={e => setHeader(ci, e.target.value)}
+                  />
+                  {tableData.headers.length > 1 && (
+                    <button className="kf-table-del-col" onClick={() => delCol(ci)} title="ลบคอลัมน์นี้">✕</button>
+                  )}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {tableData.rows.map((row, ri) => (
+              <tr key={ri} style={{position:'relative'}}>
+                {row.map((cell, ci) => (
+                  <td key={ci}>
+                    <input
+                      className="kf-tcell"
+                      value={cell}
+                      placeholder="..."
+                      onChange={e => setCell(ri, ci, e.target.value)}
+                    />
+                    {ci === row.length - 1 && tableData.rows.length > 1 && (
+                      <button
+                        className="kf-table-del-row"
+                        onClick={() => delRow(ri)}
+                        title="ลบแถวนี้"
+                        style={{position:'absolute',right:'-20px',top:'50%',transform:'translateY(-50%)'}}
+                      >✕</button>
+                    )}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
 /* ── Sortable Block ── */
-function SortableBlock({block, onUpdate, onDelete, onImgUpload}) {
-  const {attributes,listeners,setNodeRef,transform,transition,isDragging} = useSortable({id:block.id});
+function SortableBlock({ block, onUpdate, onDelete, onImgUpload }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
   const taRef = useRef(null);
 
   useEffect(() => {
@@ -205,36 +413,51 @@ function SortableBlock({block, onUpdate, onDelete, onImgUpload}) {
   const content = () => {
     if (block.type === 'divider') return (
       <div className="kf-divider-row">
-        <div className="kf-divider-l"/><span className="kf-divider-t">เส้นคั่น</span><div className="kf-divider-l"/>
+        <div className="kf-divider-l"/>
+        <span className="kf-divider-t">เส้นคั่น</span>
+        <div className="kf-divider-l"/>
       </div>
     );
+
     if (block.type === 'image') return (
       <div className="kf-img-blk">
         {block.url && <img src={block.url} alt="" className="kf-img-prev"/>}
-        <input className="kf-img-url" placeholder="วาง URL รูปภาพ..." value={block.url} onChange={e=>up({url:e.target.value})}/>
+        <input className="kf-img-url" placeholder="วาง URL รูปภาพ..." value={block.url} onChange={e => up({ url: e.target.value })}/>
         <label className="kf-img-up-row">
           <Img size={12} color="rgba(255,255,255,0.2)"/>
           <span className="kf-img-up-lbl">อัพโหลดไฟล์</span>
-          <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>onImgUpload(block.id,e.target.files[0])}/>
+          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => onImgUpload(block.id, e.target.files[0])}/>
         </label>
-        <input className="kf-img-cap" placeholder="คำอธิบายรูป..." value={block.caption} onChange={e=>up({caption:e.target.value})}/>
+        <input className="kf-img-cap" placeholder="คำอธิบายรูป..." value={block.caption} onChange={e => up({ caption: e.target.value })}/>
       </div>
     );
+
     if (block.type === 'quote') return (
       <div className="kf-quote-w">
-        <textarea ref={taRef} className="kf-ta kf-ta-q" placeholder="ข้อความเน้น..." rows={2} value={block.content} onChange={e=>up({content:e.target.value})}/>
+        <textarea ref={taRef} className="kf-ta kf-ta-q" placeholder="ข้อความเน้น..." rows={2} value={block.content} onChange={e => up({ content: e.target.value })}/>
       </div>
     );
-    const cls = block.type==='h2'?'kf-ta-h2':block.type==='h3'?'kf-ta-h3':'';
-    const ph  = block.type==='h2'?'หัวข้อใหญ่...':block.type==='h3'?'หัวข้อย่อย...':'เขียนข้อความที่นี่...';
-    return <textarea ref={taRef} className={`kf-ta ${cls}`} placeholder={ph} rows={block.type==='paragraph'?3:1} value={block.content} onChange={e=>up({content:e.target.value})}/>;
+
+    if (block.type === 'table') return (
+      <TableBlock block={block} onUpdate={onUpdate}/>
+    );
+
+    const cls = block.type === 'h2' ? 'kf-ta-h2' : block.type === 'h3' ? 'kf-ta-h3' : '';
+    const ph  = block.type === 'h2' ? 'หัวข้อใหญ่...' : block.type === 'h3' ? 'หัวข้อย่อย...' : 'เขียนข้อความที่นี่...';
+    return (
+      <textarea ref={taRef} className={`kf-ta ${cls}`} placeholder={ph}
+        rows={block.type === 'paragraph' ? 3 : 1}
+        value={block.content} onChange={e => up({ content: e.target.value })}/>
+    );
   };
 
   return (
-    <div ref={setNodeRef} style={{transform:CSS.Transform.toString(transform),transition,opacity:isDragging?0.3:1}} className="kf-brow">
+    <div ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.3 : 1 }}
+      className="kf-brow">
       <div className="kf-bhandle" {...attributes} {...listeners}><GripVertical size={13}/></div>
       <div className="kf-bbody">{content()}</div>
-      <button className="kf-bdel" onClick={()=>onDelete(block.id)}><Trash2 size={12}/></button>
+      <button className="kf-bdel" onClick={() => onDelete(block.id)}><Trash2 size={12}/></button>
     </div>
   );
 }
@@ -242,87 +465,87 @@ function SortableBlock({block, onUpdate, onDelete, onImgUpload}) {
 /* ── Main Form ── */
 export default function KnowledgeForm() {
   const navigate = useNavigate();
-  const {id}     = useParams();
+  const { id }   = useParams();
   const isEdit   = !!id;
 
-  const [meta, setMeta] = useState({title:'',slug:'',excerpt:'',cover_url:'',category_id:'',published:false});
-  const [blocks,   setBlocks]   = useState([nb()]);
-  const [cats,     setCats]     = useState([]);
-  const [saving,   setSaving]   = useState(false);
-  const [uploading,setUploading]= useState(false);
-  const [activeId, setActiveId] = useState(null);
+  const [meta,      setMeta]      = useState({ title: '', slug: '', excerpt: '', cover_url: '', category_id: '', published: false });
+  const [blocks,    setBlocks]    = useState([nb()]);
+  const [cats,      setCats]      = useState([]);
+  const [saving,    setSaving]    = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [activeId,  setActiveId]  = useState(null);
 
-  const sensors = useSensors(useSensor(PointerSensor,{activationConstraint:{distance:6}}));
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   useEffect(() => {
-    supabase.from('knowledge_categories').select('*').order('sort_order').then(({data})=>setCats(data||[]));
+    supabase.from('knowledge_categories').select('*').order('sort_order').then(({ data }) => setCats(data || []));
     if (isEdit) load();
   }, [id]);
 
   const load = async () => {
-    const {data} = await supabase.from('knowledge').select('*').eq('id',id).single();
+    const { data } = await supabase.from('knowledge').select('*').eq('id', id).single();
     if (data) {
-      setMeta({title:data.title,slug:data.slug,excerpt:data.excerpt||'',cover_url:data.cover_url||'',category_id:data.category_id||'',published:data.published});
-      setBlocks(Array.isArray(data.content)&&data.content.length?data.content:[nb()]);
+      setMeta({ title: data.title, slug: data.slug, excerpt: data.excerpt || '', cover_url: data.cover_url || '', category_id: data.category_id || '', published: data.published });
+      setBlocks(Array.isArray(data.content) && data.content.length ? data.content : [nb()]);
     }
   };
 
-  const toSlug = t => t.toLowerCase().replace(/[^\w\u0E00-\u0E7F\s-]/g,'').replace(/\s+/g,'-').slice(0,80);
-  const set    = (k,v) => setMeta(p=>({...p,[k]:v,...(k==='title'&&!isEdit?{slug:toSlug(v)}:{})}));
+  const toSlug = t => t.toLowerCase().replace(/[^\w\u0E00-\u0E7F\s-]/g, '').replace(/\s+/g, '-').slice(0, 80);
+  const set    = (k, v) => setMeta(p => ({ ...p, [k]: v, ...(k === 'title' && !isEdit ? { slug: toSlug(v) } : {}) }));
 
   const upload = async (file) => {
-    if(!file)return null;
-    const path=`knowledge/${Date.now()}.${file.name.split('.').pop()}`;
-    const {error}=await supabase.storage.from('images').upload(path,file);
-    if(error)return null;
+    if (!file) return null;
+    const path = `knowledge/${Date.now()}.${file.name.split('.').pop()}`;
+    const { error } = await supabase.storage.from('images').upload(path, file);
+    if (error) return null;
     return supabase.storage.from('images').getPublicUrl(path).data.publicUrl;
   };
 
-  const addBlock    = t => setBlocks(b=>[...b,nb(t)]);
-  const updateBlock = (id,p) => setBlocks(b=>b.map(bl=>bl.id===id?{...bl,...p}:bl));
-  const deleteBlock = id => setBlocks(b=>b.filter(bl=>bl.id!==id));
+  const addBlock    = t  => setBlocks(b => [...b, nb(t)]);
+  const updateBlock = (id, p) => setBlocks(b => b.map(bl => bl.id === id ? { ...bl, ...p } : bl));
+  const deleteBlock = id => setBlocks(b => b.filter(bl => bl.id !== id));
 
-  const handleImgUpload = async (id,file) => {
+  const handleImgUpload = async (id, file) => {
     setUploading(true);
-    const url=await upload(file);
-    if(url)updateBlock(id,{url});
+    const url = await upload(file);
+    if (url) updateBlock(id, { url });
     setUploading(false);
   };
 
   const handleCover = async e => {
-    const f=e.target.files[0]; if(!f)return;
+    const f = e.target.files[0]; if (!f) return;
     setUploading(true);
-    const url=await upload(f);
-    if(url)set('cover_url',url);
+    const url = await upload(f);
+    if (url) set('cover_url', url);
     setUploading(false);
   };
 
-  const handleDragEnd = ({active,over}) => {
+  const handleDragEnd = ({ active, over }) => {
     setActiveId(null);
-    if(!over||active.id===over.id)return;
-    setBlocks(b=>{
-      const oi=b.findIndex(bl=>bl.id===active.id);
-      const ni=b.findIndex(bl=>bl.id===over.id);
-      return arrayMove(b,oi,ni);
+    if (!over || active.id === over.id) return;
+    setBlocks(b => {
+      const oi = b.findIndex(bl => bl.id === active.id);
+      const ni = b.findIndex(bl => bl.id === over.id);
+      return arrayMove(b, oi, ni);
     });
   };
 
   const save = async (pub) => {
-    if(!meta.title.trim())return alert('กรุณาใส่ชื่อบทความ');
-    if(!meta.slug.trim()) return alert('กรุณาใส่ Slug');
+    if (!meta.title.trim()) return alert('กรุณาใส่ชื่อบทความ');
+    if (!meta.slug.trim())  return alert('กรุณาใส่ Slug');
     setSaving(true);
-    const payload={...meta,published:pub??meta.published,content:blocks};
+    const payload = { ...meta, published: pub ?? meta.published, content: blocks };
     try {
-      const {error} = isEdit
-        ? await supabase.from('knowledge').update(payload).eq('id',id)
+      const { error } = isEdit
+        ? await supabase.from('knowledge').update(payload).eq('id', id)
         : await supabase.from('knowledge').insert([payload]);
-      if(error)throw error;
+      if (error) throw error;
       navigate('/admin/knowledge');
-    } catch(e){ alert('ข้อผิดพลาด: '+e.message); }
-    finally{ setSaving(false); }
+    } catch (e) { alert('ข้อผิดพลาด: ' + e.message); }
+    finally { setSaving(false); }
   };
 
-  const activeBlock = blocks.find(b=>b.id===activeId);
+  const activeBlock = blocks.find(b => b.id === activeId);
 
   return (
     <div className="kf">
@@ -332,11 +555,11 @@ export default function KnowledgeForm() {
 
         {/* Header */}
         <header className="kf-hd">
-          <button className="kf-back" onClick={()=>navigate('/admin/knowledge')}><ArrowLeft size={13}/>กลับ</button>
-          <span className="kf-hd-label">{isEdit?<><em>แก้ไข</em> บทความ</>:<>เพิ่ม<em>บทความใหม่</em></>}</span>
+          <button className="kf-back" onClick={() => navigate('/admin/knowledge')}><ArrowLeft size={13}/>กลับ</button>
+          <span className="kf-hd-label">{isEdit ? <><em>แก้ไข</em> บทความ</> : <>เพิ่ม<em>บทความใหม่</em></>}</span>
           <div className="kf-acts">
-            <button className="kf-btn kf-btn-ghost" onClick={()=>save(false)} disabled={saving}><EyeOff size={13}/> Draft</button>
-            <button className="kf-btn kf-btn-red"   onClick={()=>save(true)}  disabled={saving}><Save size={13}/> {saving?'กำลังบันทึก...':'เผยแพร่'}</button>
+            <button className="kf-btn kf-btn-ghost" onClick={() => save(false)} disabled={saving}><EyeOff size={13}/> Draft</button>
+            <button className="kf-btn kf-btn-red"   onClick={() => save(true)}  disabled={saving}><Save size={13}/> {saving ? 'กำลังบันทึก...' : 'เผยแพร่'}</button>
           </div>
         </header>
 
@@ -344,14 +567,14 @@ export default function KnowledgeForm() {
 
           {/* Editor */}
           <div className="kf-ed">
-            <input className="kf-art-title" placeholder="ชื่อบทความ..." value={meta.title} onChange={e=>set('title',e.target.value)}/>
-            <textarea className="kf-art-excerpt" rows={2} placeholder="บทสรุปย่อ — แสดงใน card หน้า Knowledge..." value={meta.excerpt} onChange={e=>set('excerpt',e.target.value)}/>
+            <input className="kf-art-title" placeholder="ชื่อบทความ..." value={meta.title} onChange={e => set('title', e.target.value)}/>
+            <textarea className="kf-art-excerpt" rows={2} placeholder="บทสรุปย่อ — แสดงใน card หน้า Knowledge..." value={meta.excerpt} onChange={e => set('excerpt', e.target.value)}/>
 
             {/* Toolbar */}
             <div className="kf-toolbar">
               <span className="kf-toolbar-lbl">เพิ่ม Block</span>
-              {BT.map(bt=>(
-                <button key={bt.type} className="kf-tbb" onClick={()=>addBlock(bt.type)}>
+              {BT.map(bt => (
+                <button key={bt.type} className="kf-tbb" onClick={() => addBlock(bt.type)}>
                   <bt.icon size={11}/>{bt.label}
                 </button>
               ))}
@@ -359,10 +582,10 @@ export default function KnowledgeForm() {
 
             {/* DnD Blocks */}
             <DndContext sensors={sensors} collisionDetection={closestCenter}
-              onDragStart={({active})=>setActiveId(active.id)} onDragEnd={handleDragEnd}>
-              <SortableContext items={blocks.map(b=>b.id)} strategy={verticalListSortingStrategy}>
+              onDragStart={({ active }) => setActiveId(active.id)} onDragEnd={handleDragEnd}>
+              <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
                 <div className="kf-blocks">
-                  {blocks.map(bl=>(
+                  {blocks.map(bl => (
                     <SortableBlock key={bl.id} block={bl}
                       onUpdate={updateBlock} onDelete={deleteBlock} onImgUpload={handleImgUpload}/>
                   ))}
@@ -371,7 +594,7 @@ export default function KnowledgeForm() {
               <DragOverlay>
                 {activeBlock && (
                   <div className="kf-drag-ghost">
-                    {BT.find(b=>b.type===activeBlock.type)?.label ?? activeBlock.type}
+                    {BT.find(b => b.type === activeBlock.type)?.label ?? activeBlock.type}
                   </div>
                 )}
               </DragOverlay>
@@ -384,8 +607,8 @@ export default function KnowledgeForm() {
             <div className="kf-panel">
               <div className="kf-panel-hd">สถานะ</div>
               <div className="kf-panel-bd">
-                <button className={`kf-status ${meta.published?'pub':'draft'}`} onClick={()=>set('published',!meta.published)}>
-                  {meta.published?<><Eye size={13}/>เผยแพร่แล้ว</>:<><EyeOff size={13}/>Draft</>}
+                <button className={`kf-status ${meta.published ? 'pub' : 'draft'}`} onClick={() => set('published', !meta.published)}>
+                  {meta.published ? <><Eye size={13}/>เผยแพร่แล้ว</> : <><EyeOff size={13}/>Draft</>}
                 </button>
               </div>
             </div>
@@ -393,9 +616,9 @@ export default function KnowledgeForm() {
             <div className="kf-panel">
               <div className="kf-panel-hd">หมวดหมู่</div>
               <div className="kf-panel-bd">
-                <select className="kf-sel" value={meta.category_id} onChange={e=>set('category_id',e.target.value)}>
+                <select className="kf-sel" value={meta.category_id} onChange={e => set('category_id', e.target.value)}>
                   <option value="">— เลือกหมวด —</option>
-                  {cats.map(c=><option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                  {cats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                 </select>
               </div>
             </div>
@@ -403,7 +626,7 @@ export default function KnowledgeForm() {
             <div className="kf-panel">
               <div className="kf-panel-hd">URL Slug</div>
               <div className="kf-panel-bd">
-                <input className="kf-inp" placeholder="url-slug" value={meta.slug} onChange={e=>set('slug',e.target.value)}/>
+                <input className="kf-inp" placeholder="url-slug" value={meta.slug} onChange={e => set('slug', e.target.value)}/>
               </div>
             </div>
 
@@ -415,10 +638,10 @@ export default function KnowledgeForm() {
                   : <div className="kf-cover-ph"><Img size={22} color="rgba(255,255,255,0.09)"/></div>
                 }
                 <label className="kf-upload">
-                  <Img size={12}/>{uploading?'กำลังอัพโหลด...':'อัพโหลดรูป'}
-                  <input type="file" accept="image/*" style={{display:'none'}} onChange={handleCover} disabled={uploading}/>
+                  <Img size={12}/>{uploading ? 'กำลังอัพโหลด...' : 'อัพโหลดรูป'}
+                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleCover} disabled={uploading}/>
                 </label>
-                <input className="kf-inp" style={{marginTop:'0.5rem'}} placeholder="หรือวาง URL..." value={meta.cover_url} onChange={e=>set('cover_url',e.target.value)}/>
+                <input className="kf-inp" style={{ marginTop: '0.5rem' }} placeholder="หรือวาง URL..." value={meta.cover_url} onChange={e => set('cover_url', e.target.value)}/>
               </div>
             </div>
 

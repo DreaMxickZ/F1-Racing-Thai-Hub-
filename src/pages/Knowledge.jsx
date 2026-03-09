@@ -197,7 +197,7 @@ const S = `
   margin-bottom:2.5rem; max-width:680px;
 }
 
-/* Block renderers */
+/* ─── Block renderers ─── */
 .kp-body { max-width:720px; }
 .kp-bl-p  { font-size:1rem; line-height:1.9; color:rgba(255,255,255,0.7); margin-bottom:1.25rem; }
 .kp-bl-h2 {
@@ -220,7 +220,26 @@ const S = `
 .kp-bl-figure figcaption { font-size:0.78rem; color:var(--txt3); font-style:italic; margin-top:0.5rem; text-align:center; }
 .kp-bl-hr { border:none; border-top:1px solid var(--border); margin:2.5rem 0; }
 
-/* Loading */
+/* ─── TABLE BLOCK (article view) ─── */
+.kp-bl-table { margin:1.75rem 0; overflow-x:auto; }
+.kp-bl-table table {
+  width:100%; border-collapse:collapse;
+  font-family:'Barlow',sans-serif; font-size:0.9rem;
+}
+.kp-bl-table th {
+  font-family:'Barlow Condensed',sans-serif; font-size:0.78rem;
+  font-weight:800; letter-spacing:0.1em; text-transform:uppercase;
+  text-align:left; padding:0.6rem 0.85rem;
+  background:rgba(225,6,0,0.07); color:rgba(255,255,255,0.75);
+  border:1px solid rgba(255,255,255,0.1);
+}
+.kp-bl-table td {
+  padding:0.55rem 0.85rem; color:rgba(255,255,255,0.65);
+  border:1px solid rgba(255,255,255,0.06); line-height:1.5;
+}
+.kp-bl-table tr:hover td { background:rgba(255,255,255,0.02); }
+
+/* ─── Loading ─── */
 .kp-load { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1rem; background:var(--bg); }
 .kp-track { width:180px; height:2px; background:rgba(255,255,255,0.07); overflow:hidden; }
 .kp-fill  { height:100%; background:var(--red); animation:kp-slide 1.1s ease-in-out infinite; }
@@ -238,7 +257,7 @@ const S = `
 /* ─── Block renderer ─── */
 const Block = ({ b }) => {
   if (!b) return null;
-  switch(b.type) {
+  switch (b.type) {
     case 'paragraph': return <p className="kp-bl-p">{b.content}</p>;
     case 'h2':        return <h2 className="kp-bl-h2">{b.content}</h2>;
     case 'h3':        return <h3 className="kp-bl-h3">{b.content}</h3>;
@@ -246,10 +265,30 @@ const Block = ({ b }) => {
     case 'divider':   return <hr className="kp-bl-hr" />;
     case 'image':     return b.url ? (
       <figure className="kp-bl-figure">
-        <img src={b.url} alt={b.caption||''} />
+        <img src={b.url} alt={b.caption || ''} />
         {b.caption && <figcaption>{b.caption}</figcaption>}
       </figure>
     ) : null;
+    case 'table':
+      if (!b.tableData) return null;
+      return (
+        <div className="kp-bl-table">
+          <table>
+            <thead>
+              <tr>
+                {b.tableData.headers.map((h, i) => <th key={i}>{h}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {b.tableData.rows.map((row, ri) => (
+                <tr key={ri}>
+                  {row.map((cell, ci) => <td key={ci}>{cell}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
     default: return null;
   }
 };
@@ -265,10 +304,10 @@ export default function Knowledge() {
     Promise.all([
       supabase.from('knowledge')
         .select('*, knowledge_categories(name,icon,slug)')
-        .eq('published', true).order('sort_order').order('created_at',{ascending:false}),
+        .eq('published', true).order('sort_order').order('created_at', { ascending: false }),
       supabase.from('knowledge_categories').select('*').order('sort_order'),
-    ]).then(([{data:arts},{data:cats}]) => {
-      setArticles(arts||[]); setCategories(cats||[]);
+    ]).then(([{ data: arts }, { data: cats }]) => {
+      setArticles(arts || []); setCategories(cats || []);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -292,18 +331,21 @@ export default function Knowledge() {
       <div className="kp-inner">
         <div className="kp-art-wrap">
           {article.cover_url
-            ? <div className="kp-art-hero"><img src={article.cover_url} alt="" className="kp-art-hero-img"/><div className="kp-art-hero-overlay"/></div>
+            ? <div className="kp-art-hero">
+                <img src={article.cover_url} alt="" className="kp-art-hero-img"/>
+                <div className="kp-art-hero-overlay"/>
+              </div>
             : null
           }
           <div className="kp-art-meta-bar">
             <button className="kp-art-back" onClick={() => setArticle(null)}><ArrowLeft size={13}/> กลับ</button>
             <span className="kp-art-cat">{article.knowledge_categories?.icon} {article.knowledge_categories?.name}</span>
           </div>
-          <p className="kp-art-cat" style={{marginBottom:'0.6rem'}}>{article.knowledge_categories?.icon} {article.knowledge_categories?.name}</p>
+          <p className="kp-art-cat" style={{ marginBottom: '0.6rem' }}>{article.knowledge_categories?.icon} {article.knowledge_categories?.name}</p>
           <h1 className="kp-art-title">{article.title}</h1>
           {article.excerpt && <p className="kp-art-excerpt">{article.excerpt}</p>}
           <div className="kp-body">
-            {(article.content||[]).map((b,i) => <Block key={b.id||i} b={b}/>)}
+            {(article.content || []).map((b, i) => <Block key={b.id || i} b={b}/>)}
           </div>
         </div>
       </div>
@@ -322,16 +364,16 @@ export default function Knowledge() {
             <div className="kp-label">F1 Encyclopedia</div>
             <h1 className="kp-hero-title">ความรู้<br/><em>Formula 1</em></h1>
           </div>
-          <div className="kp-hero-count">{String(articles.length).padStart(2,'0')}</div>
+          <div className="kp-hero-count">{String(articles.length).padStart(2, '0')}</div>
         </header>
 
         {/* Tabs */}
         <div className="kp-tabs">
-          <button className={`kp-tab ${tab==='all'?'on':''}`} onClick={()=>setTab('all')}>
+          <button className={`kp-tab ${tab === 'all' ? 'on' : ''}`} onClick={() => setTab('all')}>
             ทั้งหมด
           </button>
           {categories.map(c => (
-            <button key={c.id} className={`kp-tab ${tab===c.slug?'on':''}`} onClick={()=>setTab(c.slug)}>
+            <button key={c.id} className={`kp-tab ${tab === c.slug ? 'on' : ''}`} onClick={() => setTab(c.slug)}>
               <span className="kp-tab-ico">{c.icon}</span> {c.name}
             </button>
           ))}
@@ -350,7 +392,8 @@ export default function Knowledge() {
               <div key={a.id} className="kp-card" onClick={() => setArticle(a)}>
                 <div className="kp-card-img-box">
                   {a.cover_url
-                    ? <><img src={a.cover_url} alt={a.title} className="kp-card-img"/>
+                    ? <>
+                        <img src={a.cover_url} alt={a.title} className="kp-card-img"/>
                         <span className="kp-card-tag">{a.knowledge_categories?.icon} {a.knowledge_categories?.name}</span>
                       </>
                     : <div className="kp-card-img-ph"><BookOpen size={28} color="rgba(255,255,255,0.08)"/></div>
