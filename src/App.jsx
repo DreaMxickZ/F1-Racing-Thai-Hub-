@@ -23,6 +23,8 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import NewsManagement from './pages/admin/NewsManagement';
 import NewsForm from './pages/admin/NewsForm';
 import DriverManagement from './pages/admin/DriverManagement';
+import KnowledgeForm from './pages/admin/KnowledgeForm';
+import KnowledgeManagement from './pages/admin/KnowledgeManagement';
 
 function App() {
   return (
@@ -67,6 +69,21 @@ function App() {
               <Route path="/admin/news/edit/:id" element={
                 <ProtectedRoute>
                   <NewsForm />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/knowledge" element={
+                <ProtectedRoute>
+                  <KnowledgeManagement />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/knowledge/create" element={
+                <ProtectedRoute>
+                  <KnowledgeForm />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/knowledge/edit/:id" element={
+                <ProtectedRoute>
+                  <KnowledgeForm />
                 </ProtectedRoute>
               } />
               <Route path="/admin/drivers" element={

@@ -155,7 +155,7 @@ const Footer = () => {
           <div>
             <div className="ft-brand">
               <Flag size={22} className="ft-brand-icon" />
-              <span className="ft-brand-name">F1 <em>Thai</em> Hub</span>
+              <span className="ft-brand-name"> <em>F1 ThaiHub</em></span>
             </div>
             <p className="ft-desc">
               ศูนย์รวมข้อมูล Formula 1 ฤดูกาล 2026<br/>
@@ -207,7 +207,7 @@ const Footer = () => {
         {/* Bottom bar */}
         <div className="ft-bottom">
           <p className="ft-copy">© 2026 F1 Thai Hub — All rights reserved</p>
-          <p className="ft-made">Made with ❤️ by Claude AI</p>
+          <p className="ft-made">Made with by Claude AI</p>
         </div>
       </div>
     </footer>

@@ -197,8 +197,8 @@ const Navbar = () => {
       <div className="nb-inner">
         {/* Logo */}
         <Link to="/" className="nb-logo" onClick={closeMobileMenu}>
-          <Flag className="nb-logo-icon" />
-          <span className="nb-logo-text">F1 <em>ThaiHub</em></span>
+          {/* <Flag className="nb-logo-icon" /> */}
+          <span className="nb-logo-text"><em>F1 ThaiHub</em>  </span>
         </Link>
 
         {/* Desktop Links */}
