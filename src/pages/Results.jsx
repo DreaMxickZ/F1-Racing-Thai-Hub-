@@ -202,7 +202,12 @@ const Results = () => {
     try {
       const schedule = await jolpicaApi.getSchedule(2026);
       const today = new Date();
-      const completed = schedule.filter(race => new Date(race.date) < today);
+      const completed = schedule.filter(race => {
+  const raceDate = new Date(race.date + 'T' + (race.time || '23:59:59'));
+  const showFrom = new Date(raceDate);
+  showFrom.setDate(showFrom.getDate() - 2); // แสดงก่อน 2 วัน
+  return showFrom < today;
+});
       setRaces(completed);
     } catch (error) {
       console.error('Error fetching races:', error);

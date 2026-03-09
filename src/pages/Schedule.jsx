@@ -331,7 +331,12 @@ const fmtSession = (session) => {
   };
 };
 
-const isPast  = (dateStr) => new Date(dateStr) < new Date();
+const isPast = (dateStr) => {
+  const raceDate = new Date(dateStr);
+  const showFrom = new Date(raceDate);
+  showFrom.setDate(showFrom.getDate() - 2); // แสดงก่อน 2 วัน
+  return showFrom < new Date();
+};
 
 const isNext = (races, index) => {
   for (let i = 0; i < races.length; i++) {
