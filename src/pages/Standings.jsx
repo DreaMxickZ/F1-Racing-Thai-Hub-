@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Users, Flag, ChevronRight } from 'lucide-react';
+import { Trophy, Users, Flag } from 'lucide-react';
 import { jolpicaApi } from '../services/f1Api';
 
 const SCOPED_CSS = `
@@ -272,6 +272,146 @@ const SCOPED_CSS = `
     from { opacity: 0; transform: translateY(14px); }
     to   { opacity: 1; transform: translateY(0); }
   }
+
+  /* ══════════════════════════════════════
+     MOBILE CARD LAYOUT  (≤ 640px)
+  ══════════════════════════════════════ */
+  @media (max-width: 640px) {
+    .f1-standings-page .st-inner {
+      padding: 0 1rem 4rem;
+    }
+    .f1-standings-page .st-hd {
+      padding: 2rem 0 1.5rem;
+      margin-bottom: 1.75rem;
+    }
+
+    /* Hide desktop table */
+    .f1-standings-page .st-table-wrap { display: none; }
+
+    /* Card list */
+    .f1-standings-page .st-cards {
+      display: flex; flex-direction: column; gap: 2px;
+      border: 1px solid rgba(255,255,255,0.05);
+      overflow: hidden;
+      animation: st-rise 0.4s ease both;
+    }
+
+    /* Red header bar matching thead */
+    .f1-standings-page .st-cards-head {
+      background: #e10600;
+      padding: 0.65rem 1rem;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: rgba(255,255,255,0.85);
+    }
+
+    .f1-standings-page .st-card {
+      background: #111114;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      padding: 0.85rem 1rem;
+      display: flex; align-items: center; gap: 0.85rem;
+      transition: background 0.2s ease;
+      animation: st-rise 0.4s ease both;
+    }
+    .f1-standings-page .st-card:last-child { border-bottom: none; }
+    .f1-standings-page .st-card:active { background: #17171c; }
+
+    /* Podium accent */
+    .f1-standings-page .st-card-podium { background: rgba(255,255,255,0.025); }
+    .f1-standings-page .st-card-1 { border-left: 2px solid #f5c518; }
+    .f1-standings-page .st-card-2 { border-left: 2px solid #b0b8c1; }
+    .f1-standings-page .st-card-3 { border-left: 2px solid #cd7f32; }
+
+    /* Stagger cards same as rows */
+    .f1-standings-page .st-card:nth-child(2)  { animation-delay: 0.04s }
+    .f1-standings-page .st-card:nth-child(3)  { animation-delay: 0.08s }
+    .f1-standings-page .st-card:nth-child(4)  { animation-delay: 0.12s }
+    .f1-standings-page .st-card:nth-child(5)  { animation-delay: 0.16s }
+    .f1-standings-page .st-card:nth-child(6)  { animation-delay: 0.20s }
+    .f1-standings-page .st-card:nth-child(7)  { animation-delay: 0.24s }
+    .f1-standings-page .st-card:nth-child(8)  { animation-delay: 0.28s }
+    .f1-standings-page .st-card:nth-child(9)  { animation-delay: 0.32s }
+    .f1-standings-page .st-card:nth-child(10) { animation-delay: 0.36s }
+    .f1-standings-page .st-card:nth-child(11) { animation-delay: 0.40s }
+    .f1-standings-page .st-card:nth-child(12) { animation-delay: 0.44s }
+    .f1-standings-page .st-card:nth-child(13) { animation-delay: 0.48s }
+    .f1-standings-page .st-card:nth-child(14) { animation-delay: 0.52s }
+    .f1-standings-page .st-card:nth-child(15) { animation-delay: 0.56s }
+    .f1-standings-page .st-card:nth-child(16) { animation-delay: 0.60s }
+    .f1-standings-page .st-card:nth-child(17) { animation-delay: 0.64s }
+    .f1-standings-page .st-card:nth-child(18) { animation-delay: 0.68s }
+    .f1-standings-page .st-card:nth-child(19) { animation-delay: 0.72s }
+    .f1-standings-page .st-card:nth-child(20) { animation-delay: 0.76s }
+    .f1-standings-page .st-card:nth-child(21) { animation-delay: 0.80s }
+
+    /* Position block */
+    .f1-standings-page .st-card-pos {
+      display: flex; flex-direction: column; align-items: center;
+      min-width: 2.2rem;
+    }
+    .f1-standings-page .st-card-pos-num {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.75rem; font-weight: 900; line-height: 1;
+    }
+    .f1-standings-page .st-card-pos-num.gold   { color: #f5c518; }
+    .f1-standings-page .st-card-pos-num.silver { color: #b0b8c1; }
+    .f1-standings-page .st-card-pos-num.bronze { color: #cd7f32; }
+    .f1-standings-page .st-card-pos-num.normal { color: rgba(255,255,255,0.4); }
+
+    /* Middle info block — takes remaining space */
+    .f1-standings-page .st-card-info {
+      flex: 1; min-width: 0;
+    }
+    .f1-standings-page .st-card-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.05rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.02em;
+      color: #ffffff; line-height: 1.1;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .f1-standings-page .st-card-name span { color: #e10600; }
+    .f1-standings-page .st-card-sub {
+      font-size: 0.7rem; text-transform: uppercase;
+      letter-spacing: 0.08em; color: rgba(255,255,255,0.32);
+      margin-top: 0.2rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* Right points block */
+    .f1-standings-page .st-card-right {
+      display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem;
+      flex-shrink: 0;
+    }
+    .f1-standings-page .st-card-pts {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 1.75rem; font-weight: 900;
+      color: #e10600; line-height: 1;
+    }
+    .f1-standings-page .st-card-pts-label {
+      font-size: 0.58rem; text-transform: uppercase;
+      letter-spacing: 0.12em; color: rgba(255,255,255,0.2);
+      font-weight: 600;
+    }
+    .f1-standings-page .st-card-wins {
+      font-size: 0.68rem; text-transform: uppercase;
+      letter-spacing: 0.08em; color: rgba(255,255,255,0.35);
+      margin-top: 0.15rem;
+    }
+    .f1-standings-page .st-card-wins strong {
+      color: rgba(255,255,255,0.7);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.85rem; font-weight: 700;
+    }
+
+    /* Show card list, hide table on mobile */
+    .f1-standings-page .st-cards { display: flex; }
+  }
+
+  /* On desktop, hide card list */
+  @media (min-width: 641px) {
+    .f1-standings-page .st-cards { display: none; }
+  }
 `;
 
 const posClass = (pos) => {
@@ -279,6 +419,13 @@ const posClass = (pos) => {
   if (pos === '2') return 'silver';
   if (pos === '3') return 'bronze';
   return 'normal';
+};
+
+const cardBorderClass = (index) => {
+  if (index === 0) return 'st-card-1';
+  if (index === 1) return 'st-card-2';
+  if (index === 2) return 'st-card-3';
+  return '';
 };
 
 const Standings = () => {
@@ -358,120 +505,217 @@ const Standings = () => {
               </button>
             </div>
 
-            {/* Driver Standings */}
+            {/* ── DRIVER STANDINGS ── */}
             {activeTab === 'drivers' && (
-              <div className="st-table-wrap">
-                <table className="st-table">
-                  <thead className="st-thead">
-                    <tr>
-                      <th>อันดับ</th>
-                      <th>นักแข่ง</th>
-                      <th>ทีม</th>
-                      <th className="center">คะแนน</th>
-                      <th className="center">ชนะ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {driverStandings.map((standing, index) => (
-                      <tr
-                        key={standing.Driver.driverId}
-                        className={`st-row ${index === 0 ? 'st-row-1' : index === 1 ? 'st-row-2' : index === 2 ? 'st-row-3' : ''} ${index < 3 ? 'st-row-podium' : ''}`}
-                      >
-                        <td className="st-td">
-                          <div className="st-pos">
-                            <span className={`st-pos-num ${posClass(standing.position)}`}>
-                              {standing.position}
-                            </span>
-                            {index < 3 && (
-                              <Trophy
-                                size={14}
-                                color={
-                                  standing.position === '1' ? '#f5c518' :
-                                  standing.position === '2' ? '#b0b8c1' : '#cd7f32'
-                                }
-                              />
-                            )}
-                          </div>
-                        </td>
-                        <td className="st-td">
-                          <p className="st-driver-name">
-                            {standing.Driver.givenName}{' '}
-                            <span>{standing.Driver.familyName}</span>
-                          </p>
-                          <span className="st-nat">{standing.Driver.nationality}</span>
-                        </td>
-                        <td className="st-td">
-                          <span className="st-team-name">{standing.Constructors[0].name}</span>
-                        </td>
-                        <td className="st-td center">
-                          <span className="st-pts">{standing.points}</span>
-                          <span className="st-pts-label">pts</span>
-                        </td>
-                        <td className="st-td center">
-                          <span className="st-wins">{standing.wins}</span>
-                        </td>
+              <>
+                {/* Desktop table */}
+                <div className="st-table-wrap">
+                  <table className="st-table">
+                    <thead className="st-thead">
+                      <tr>
+                        <th>อันดับ</th>
+                        <th>นักแข่ง</th>
+                        <th>ทีม</th>
+                        <th className="center">คะแนน</th>
+                        <th className="center">ชนะ</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {driverStandings.map((standing, index) => (
+                        <tr
+                          key={standing.Driver.driverId}
+                          className={`st-row ${index === 0 ? 'st-row-1' : index === 1 ? 'st-row-2' : index === 2 ? 'st-row-3' : ''} ${index < 3 ? 'st-row-podium' : ''}`}
+                        >
+                          <td className="st-td">
+                            <div className="st-pos">
+                              <span className={`st-pos-num ${posClass(standing.position)}`}>
+                                {standing.position}
+                              </span>
+                              {index < 3 && (
+                                <Trophy
+                                  size={14}
+                                  color={
+                                    standing.position === '1' ? '#f5c518' :
+                                    standing.position === '2' ? '#b0b8c1' : '#cd7f32'
+                                  }
+                                />
+                              )}
+                            </div>
+                          </td>
+                          <td className="st-td">
+                            <p className="st-driver-name">
+                              {standing.Driver.givenName}{' '}
+                              <span>{standing.Driver.familyName}</span>
+                            </p>
+                            <span className="st-nat">{standing.Driver.nationality}</span>
+                          </td>
+                          <td className="st-td">
+                            <span className="st-team-name">{standing.Constructors[0].name}</span>
+                          </td>
+                          <td className="st-td center">
+                            <span className="st-pts">{standing.points}</span>
+                            <span className="st-pts-label">pts</span>
+                          </td>
+                          <td className="st-td center">
+                            <span className="st-wins">{standing.wins}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="st-cards">
+                  <div className="st-cards-head">นักแข่ง — ฤดูกาล 2026</div>
+                  {driverStandings.map((standing, index) => (
+                    <div
+                      key={standing.Driver.driverId}
+                      className={`st-card ${cardBorderClass(index)} ${index < 3 ? 'st-card-podium' : ''}`}
+                    >
+                      {/* Position */}
+                      <div className="st-card-pos">
+                        <span className={`st-card-pos-num ${posClass(standing.position)}`}>
+                          {standing.position}
+                        </span>
+                        {index < 3 && (
+                          <Trophy
+                            size={10}
+                            color={
+                              standing.position === '1' ? '#f5c518' :
+                              standing.position === '2' ? '#b0b8c1' : '#cd7f32'
+                            }
+                            style={{ marginTop: '0.2rem' }}
+                          />
+                        )}
+                      </div>
+
+                      {/* Name + Team */}
+                      <div className="st-card-info">
+                        <div className="st-card-name">
+                          {standing.Driver.givenName}{' '}
+                          <span>{standing.Driver.familyName}</span>
+                        </div>
+                        <div className="st-card-sub">{standing.Constructors[0].name}</div>
+                      </div>
+
+                      {/* Points + Wins */}
+                      <div className="st-card-right">
+                        <span className="st-card-pts">{standing.points}</span>
+                        <span className="st-card-pts-label">pts</span>
+                        <span className="st-card-wins">
+                          ชนะ <strong>{standing.wins}</strong>
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
 
-            {/* Constructor Standings */}
+            {/* ── CONSTRUCTOR STANDINGS ── */}
             {activeTab === 'constructors' && (
-              <div className="st-table-wrap">
-                <table className="st-table">
-                  <thead className="st-thead">
-                    <tr>
-                      <th>อันดับ</th>
-                      <th>ทีม</th>
-                      <th>สัญชาติ</th>
-                      <th className="center">คะแนน</th>
-                      <th className="center">ชนะ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {constructorStandings.map((standing, index) => (
-                      <tr
-                        key={standing.Constructor.constructorId}
-                        className={`st-row ${index === 0 ? 'st-row-1' : index === 1 ? 'st-row-2' : index === 2 ? 'st-row-3' : ''} ${index < 3 ? 'st-row-podium' : ''}`}
-                      >
-                        <td className="st-td">
-                          <div className="st-pos">
-                            <span className={`st-pos-num ${posClass(standing.position)}`}>
-                              {standing.position}
-                            </span>
-                            {index < 3 && (
-                              <Trophy
-                                size={14}
-                                color={
-                                  standing.position === '1' ? '#f5c518' :
-                                  standing.position === '2' ? '#b0b8c1' : '#cd7f32'
-                                }
-                              />
-                            )}
-                          </div>
-                        </td>
-                        <td className="st-td">
-                          <span className="st-constructor-name">{standing.Constructor.name}</span>
-                        </td>
-                        <td className="st-td">
-                          <span className="st-nat" style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)' }}>
-                            {standing.Constructor.nationality}
-                          </span>
-                        </td>
-                        <td className="st-td center">
-                          <span className="st-pts">{standing.points}</span>
-                          <span className="st-pts-label">pts</span>
-                        </td>
-                        <td className="st-td center">
-                          <span className="st-wins">{standing.wins}</span>
-                        </td>
+              <>
+                {/* Desktop table */}
+                <div className="st-table-wrap">
+                  <table className="st-table">
+                    <thead className="st-thead">
+                      <tr>
+                        <th>อันดับ</th>
+                        <th>ทีม</th>
+                        <th>สัญชาติ</th>
+                        <th className="center">คะแนน</th>
+                        <th className="center">ชนะ</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {constructorStandings.map((standing, index) => (
+                        <tr
+                          key={standing.Constructor.constructorId}
+                          className={`st-row ${index === 0 ? 'st-row-1' : index === 1 ? 'st-row-2' : index === 2 ? 'st-row-3' : ''} ${index < 3 ? 'st-row-podium' : ''}`}
+                        >
+                          <td className="st-td">
+                            <div className="st-pos">
+                              <span className={`st-pos-num ${posClass(standing.position)}`}>
+                                {standing.position}
+                              </span>
+                              {index < 3 && (
+                                <Trophy
+                                  size={14}
+                                  color={
+                                    standing.position === '1' ? '#f5c518' :
+                                    standing.position === '2' ? '#b0b8c1' : '#cd7f32'
+                                  }
+                                />
+                              )}
+                            </div>
+                          </td>
+                          <td className="st-td">
+                            <span className="st-constructor-name">{standing.Constructor.name}</span>
+                          </td>
+                          <td className="st-td">
+                            <span className="st-nat" style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)' }}>
+                              {standing.Constructor.nationality}
+                            </span>
+                          </td>
+                          <td className="st-td center">
+                            <span className="st-pts">{standing.points}</span>
+                            <span className="st-pts-label">pts</span>
+                          </td>
+                          <td className="st-td center">
+                            <span className="st-wins">{standing.wins}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="st-cards">
+                  <div className="st-cards-head">ทีม — ฤดูกาล 2026</div>
+                  {constructorStandings.map((standing, index) => (
+                    <div
+                      key={standing.Constructor.constructorId}
+                      className={`st-card ${cardBorderClass(index)} ${index < 3 ? 'st-card-podium' : ''}`}
+                    >
+                      {/* Position */}
+                      <div className="st-card-pos">
+                        <span className={`st-card-pos-num ${posClass(standing.position)}`}>
+                          {standing.position}
+                        </span>
+                        {index < 3 && (
+                          <Trophy
+                            size={10}
+                            color={
+                              standing.position === '1' ? '#f5c518' :
+                              standing.position === '2' ? '#b0b8c1' : '#cd7f32'
+                            }
+                            style={{ marginTop: '0.2rem' }}
+                          />
+                        )}
+                      </div>
+
+                      {/* Team name + nationality */}
+                      <div className="st-card-info">
+                        <div className="st-card-name" style={{ color: '#e10600' }}>
+                          {standing.Constructor.name}
+                        </div>
+                        <div className="st-card-sub">{standing.Constructor.nationality}</div>
+                      </div>
+
+                      {/* Points + Wins */}
+                      <div className="st-card-right">
+                        <span className="st-card-pts">{standing.points}</span>
+                        <span className="st-card-pts-label">pts</span>
+                        <span className="st-card-wins">
+                          ชนะ <strong>{standing.wins}</strong>
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
 
           </div>
