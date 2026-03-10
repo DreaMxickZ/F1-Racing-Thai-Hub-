@@ -171,11 +171,29 @@ const SCOPED_CSS = `
     50% { opacity: 0.6; }
   }
 
+  /* ── FLAG ────────────────────────────── */
+  .f1-schedule-page .sp-flag {
+    display: inline-block;
+    width: 32px;
+    height: 24px;
+    object-fit: cover;
+    border-radius: 2px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
+    flex-shrink: 0;
+    vertical-align: middle;
+  }
+  .f1-schedule-page .sp-race-name-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.6rem;
+  }
+
   .f1-schedule-page .sp-race-name {
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 1.7rem; font-weight: 900; text-transform: uppercase;
     letter-spacing: 0.01em; color: #ffffff;
-    margin: 0 0 0.6rem; padding: 0; line-height: 1;
+    margin: 0; padding: 0; line-height: 1;
   }
   .f1-schedule-page .sp-circuit-row {
     display: flex; align-items: center; gap: 0.4rem;
@@ -320,6 +338,46 @@ const TOTAL_LAPS = {
   vegas: 50, losail: 57, yas_marina: 58,
 };
 
+// ── Country name → ISO 3166-1 alpha-2 code ────────────────────────────────────
+// Used with flagcdn.com: https://flagcdn.com/24x18/{code}.png
+const COUNTRY_CODE = {
+  Australia:       'au',
+  Japan:           'jp',
+  China:           'cn',
+  Singapore:       'sg',
+  Bahrain:         'bh',
+  UAE:             'ae',
+  'Saudi Arabia':  'sa',
+  Qatar:           'qa',
+  Azerbaijan:      'az',
+  Italy:           'it',
+  Monaco:          'mc',
+  Spain:           'es',
+  Austria:         'at',
+  UK:              'gb',
+  'Great Britain': 'gb',
+  Hungary:         'hu',
+  Belgium:         'be',
+  Netherlands:     'nl',
+  USA:             'us',
+  'United States': 'us',
+  'Las Vegas':     'us',
+  Mexico:          'mx',
+  Brazil:          'br',
+  Canada:          'ca',
+};
+
+/**
+ * Returns a flagcdn.com <img> URL for a given country string.
+ * Falls back to null if the country is unknown.
+ */
+const getCountryFlagUrl = (country) => {
+  if (!country) return null;
+  const code = COUNTRY_CODE[country]
+    ?? COUNTRY_CODE[Object.keys(COUNTRY_CODE).find(k => k.toLowerCase() === country.toLowerCase())];
+  return code ? `https://flagcdn.com/32x24/${code}.png` : null;
+};
+
 const fmtSession = (session) => {
   if (!session?.date) return { dateStr: '—', timeStr: '—' };
   const dt = new Date(session.date + 'T' + (session.time || '00:00:00'));
@@ -334,7 +392,7 @@ const fmtSession = (session) => {
 const isPast = (dateStr) => {
   const raceDate = new Date(dateStr);
   const showFrom = new Date(raceDate);
-  showFrom.setDate(showFrom.getDate() - 2); // แสดงก่อน 2 วัน
+  showFrom.setDate(showFrom.getDate() - 2);
   return showFrom < new Date();
 };
 
@@ -351,7 +409,7 @@ const isNext = (races, index) => {
 const Schedule = () => {
   const [schedule,    setSchedule]    = useState([]);
   const [loading,     setLoading]     = useState(true);
-  const [selectedRace, setSelectedRace] = useState(null); // race object when viewing results
+  const [selectedRace, setSelectedRace] = useState(null);
 
   useEffect(() => {
     jolpicaApi.getSchedule(2026)
@@ -360,7 +418,6 @@ const Schedule = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  // If user picked a race, show RaceResult page
   if (selectedRace) {
     return (
       <RaceResult
@@ -439,6 +496,7 @@ const Schedule = () => {
                 const raceSession = fmtSession({ date: race.date, time: race.time });
                 const sessions = buildSessions(race);
                 const laps = TOTAL_LAPS[race.Circuit?.circuitId];
+                const flagUrl = getCountryFlagUrl(race.Circuit?.Location?.country);
 
                 return (
                   <div
@@ -458,7 +516,18 @@ const Schedule = () => {
                           {next  && <span className="sp-next-pill">▶ ถัดไป</span>}
                         </div>
 
-                        <h2 className="sp-race-name">{race.raceName}</h2>
+                        {/* Race name + flag */}
+                        <div className="sp-race-name-row">
+                          {flagUrl && (
+                            <img
+                              className="sp-flag"
+                              src={flagUrl}
+                              alt={race.Circuit?.Location?.country}
+                              title={race.Circuit?.Location?.country}
+                            />
+                          )}
+                          <h2 className="sp-race-name">{race.raceName}</h2>
+                        </div>
 
                         <div className="sp-circuit-row">
                           <MapPin size={12} />
@@ -496,7 +565,6 @@ const Schedule = () => {
                             </a>
                           )}
 
-                          {/* ── Result button — only for past races ── */}
                           {past && (
                             <button
                               className="sp-result-btn"
