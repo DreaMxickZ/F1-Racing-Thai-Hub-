@@ -16,6 +16,7 @@ import Schedule from './pages/Schedule';
 import Standings from './pages/Standings';
 import Login from './pages/Login';
 import Knowledge from './pages/Knowledge';
+import KnowledgeDetail from './pages/KnowledgeDetail';
 import Results from './pages/Results';
 
 // Admin Pages
@@ -50,6 +51,8 @@ function App() {
                 <Route path="/standings" element={<Standings />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/knowledge" element={<Knowledge />} />
+                {/* SEO-friendly knowledge URL: /knowledge/:slug */}
+                <Route path="/knowledge/:slug" element={<KnowledgeDetail />} />
                 <Route path="/results" element={<Results />} />
 
                 {/* Protected Admin Routes */}

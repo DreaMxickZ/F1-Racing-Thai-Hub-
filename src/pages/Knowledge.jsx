@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { BookOpen, ChevronRight, ArrowLeft, Clock, Tag } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { BookOpen, ChevronRight } from 'lucide-react';
 import { supabase } from '../config/supabase';
 
 /* ─────────────────────────────────────────────────────────
@@ -111,6 +112,7 @@ const S = `
   transition:background 0.25s;
   animation:kp-up 0.5s ease both;
   position:relative;
+  text-decoration:none;
 }
 .kp-card:hover { background:var(--surface2); }
 
@@ -148,6 +150,12 @@ const S = `
 .kp-card-read svg { transition:transform 0.2s; }
 .kp-card:hover .kp-card-read svg { transform:translateX(3px); }
 
+/* URL slug hint */
+.kp-card-slug {
+  font-size:0.65rem; color:var(--txt3); font-family:monospace;
+  letter-spacing:0.03em; margin-top:0.1rem;
+}
+
 /* ─── EMPTY ─── */
 .kp-empty {
   grid-column:1/-1; text-align:center; padding:5rem 2rem;
@@ -156,96 +164,12 @@ const S = `
 .kp-empty-t { font-family:'Barlow Condensed',sans-serif; font-size:1.5rem; font-weight:900; text-transform:uppercase; color:var(--txt3); margin:1rem 0 0.4rem; }
 .kp-empty-s { font-size:0.82rem; color:var(--txt3); }
 
-/* ─── ARTICLE VIEW ─── */
-.kp-art-wrap { animation:kp-up 0.4s ease both; }
-
-.kp-art-hero {
-  position:relative; width:calc(100% + 4rem); margin-left:-2rem;
-  aspect-ratio:21/8; overflow:hidden;
-}
-.kp-art-hero-img { width:100%; height:100%; object-fit:cover; filter:brightness(0.55) saturate(0.7); }
-.kp-art-hero-overlay {
-  position:absolute; inset:0;
-  background:linear-gradient(0deg, rgba(7,7,8,1) 0%, rgba(7,7,8,0.2) 60%, transparent 100%);
-}
-.kp-art-hero-ph { width:100%; aspect-ratio:21/8; background:var(--surface2); }
-.kp-art-meta-bar {
-  display:flex; align-items:center; gap:1.5rem; padding:1.75rem 0;
-  border-bottom:1px solid var(--border); margin-bottom:2rem;
-  flex-wrap:wrap;
-}
-.kp-art-back {
-  display:inline-flex; align-items:center; gap:0.5rem;
-  font-family:'Barlow Condensed',sans-serif; font-size:0.72rem; font-weight:700;
-  letter-spacing:0.18em; text-transform:uppercase;
-  background:none; border:1px solid var(--border2); color:var(--txt2);
-  padding:0.45rem 0.9rem; cursor:pointer; transition:all 0.2s;
-}
-.kp-art-back:hover { color:#fff; border-color:var(--border2); background:var(--surface2); }
-.kp-art-cat {
-  font-family:'Barlow Condensed',sans-serif; font-size:0.68rem; font-weight:800;
-  letter-spacing:0.25em; text-transform:uppercase; color:var(--red);
-}
-.kp-art-title {
-  font-family:'Barlow Condensed',sans-serif;
-  font-size:clamp(2.2rem,5vw,3.5rem); font-weight:900;
-  text-transform:uppercase; color:#fff; line-height:1; margin-bottom:1.5rem;
-}
-.kp-art-excerpt {
-  font-size:1.05rem; color:var(--txt2); line-height:1.75;
-  border-left:3px solid var(--red); padding-left:1.25rem;
-  margin-bottom:2.5rem; max-width:680px;
-}
-
-/* ─── Block renderers ─── */
-.kp-body { max-width:720px; }
-.kp-bl-p  { font-size:1rem; line-height:1.9; color:rgba(255,255,255,0.7); margin-bottom:1.25rem; }
-.kp-bl-h2 {
-  font-family:'Barlow Condensed',sans-serif; font-size:1.75rem; font-weight:900;
-  text-transform:uppercase; color:#fff; margin:2.5rem 0 0.75rem;
-  display:flex; align-items:center; gap:0.75rem;
-}
-.kp-bl-h2::before { content:''; flex-shrink:0; width:4px; height:1.4rem; background:var(--red); border-radius:1px; }
-.kp-bl-h3 {
-  font-family:'Barlow Condensed',sans-serif; font-size:1.2rem; font-weight:800;
-  text-transform:uppercase; color:rgba(255,255,255,0.7); margin:2rem 0 0.5rem;
-}
-.kp-bl-quote {
-  border-left:3px solid var(--red); padding:1rem 1.5rem;
-  background:var(--red-dim); margin:1.5rem 0; border-radius:0 2px 2px 0;
-  font-style:italic; font-size:1.05rem; color:rgba(255,255,255,0.6);
-}
-.kp-bl-figure { margin:2rem 0; }
-.kp-bl-figure img { width:100%; border-radius:2px; border:1px solid var(--border); display:block; }
-.kp-bl-figure figcaption { font-size:0.78rem; color:var(--txt3); font-style:italic; margin-top:0.5rem; text-align:center; }
-.kp-bl-hr { border:none; border-top:1px solid var(--border); margin:2.5rem 0; }
-
-/* ─── TABLE BLOCK (article view) ─── */
-.kp-bl-table { margin:1.75rem 0; overflow-x:auto; }
-.kp-bl-table table {
-  width:100%; border-collapse:collapse;
-  font-family:'Barlow',sans-serif; font-size:0.9rem;
-}
-.kp-bl-table th {
-  font-family:'Barlow Condensed',sans-serif; font-size:0.78rem;
-  font-weight:800; letter-spacing:0.1em; text-transform:uppercase;
-  text-align:left; padding:0.6rem 0.85rem;
-  background:rgba(225,6,0,0.07); color:rgba(255,255,255,0.75);
-  border:1px solid rgba(255,255,255,0.1);
-}
-.kp-bl-table td {
-  padding:0.55rem 0.85rem; color:rgba(255,255,255,0.65);
-  border:1px solid rgba(255,255,255,0.06); line-height:1.5;
-}
-.kp-bl-table tr:hover td { background:rgba(255,255,255,0.02); }
-
 /* ─── Loading ─── */
 .kp-load { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1rem; background:var(--bg); }
 .kp-track { width:180px; height:2px; background:rgba(255,255,255,0.07); overflow:hidden; }
 .kp-fill  { height:100%; background:var(--red); animation:kp-slide 1.1s ease-in-out infinite; }
 .kp-load-t { font-family:'Barlow Condensed',sans-serif; font-size:0.65rem; font-weight:800; letter-spacing:0.35em; text-transform:uppercase; color:var(--txt3); }
 
-/* Stagger animations */
 .kp-card:nth-child(1){animation-delay:0.04s}.kp-card:nth-child(2){animation-delay:0.08s}
 .kp-card:nth-child(3){animation-delay:0.12s}.kp-card:nth-child(4){animation-delay:0.16s}
 .kp-card:nth-child(5){animation-delay:0.20s}.kp-card:nth-child(6){animation-delay:0.24s}
@@ -254,50 +178,11 @@ const S = `
 @keyframes kp-slide { 0%{transform:translateX(-100%)} 100%{transform:translateX(400%)} }
 `;
 
-/* ─── Block renderer ─── */
-const Block = ({ b }) => {
-  if (!b) return null;
-  switch (b.type) {
-    case 'paragraph': return <p className="kp-bl-p">{b.content}</p>;
-    case 'h2':        return <h2 className="kp-bl-h2">{b.content}</h2>;
-    case 'h3':        return <h3 className="kp-bl-h3">{b.content}</h3>;
-    case 'quote':     return <blockquote className="kp-bl-quote">{b.content}</blockquote>;
-    case 'divider':   return <hr className="kp-bl-hr" />;
-    case 'image':     return b.url ? (
-      <figure className="kp-bl-figure">
-        <img src={b.url} alt={b.caption || ''} />
-        {b.caption && <figcaption>{b.caption}</figcaption>}
-      </figure>
-    ) : null;
-    case 'table':
-      if (!b.tableData) return null;
-      return (
-        <div className="kp-bl-table">
-          <table>
-            <thead>
-              <tr>
-                {b.tableData.headers.map((h, i) => <th key={i}>{h}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {b.tableData.rows.map((row, ri) => (
-                <tr key={ri}>
-                  {row.map((cell, ci) => <td key={ci}>{cell}</td>)}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
-    default: return null;
-  }
-};
-
 export default function Knowledge() {
+  const navigate = useNavigate();
   const [articles,   setArticles]   = useState([]);
   const [categories, setCategories] = useState([]);
   const [tab,        setTab]        = useState('all');
-  const [article,    setArticle]    = useState(null);
   const [loading,    setLoading]    = useState(true);
 
   useEffect(() => {
@@ -319,35 +204,6 @@ export default function Knowledge() {
       <div className="kp-load">
         <div className="kp-track"><div className="kp-fill"/></div>
         <p className="kp-load-t">Loading</p>
-      </div>
-    </div>
-  );
-
-  /* Article detail */
-  if (article) return (
-    <div className="kp">
-      <style>{S}</style>
-      <div className="kp-atm"/>
-      <div className="kp-inner">
-        <div className="kp-art-wrap">
-          {article.cover_url
-            ? <div className="kp-art-hero">
-                <img src={article.cover_url} alt="" className="kp-art-hero-img"/>
-                <div className="kp-art-hero-overlay"/>
-              </div>
-            : null
-          }
-          <div className="kp-art-meta-bar">
-            <button className="kp-art-back" onClick={() => setArticle(null)}><ArrowLeft size={13}/> กลับ</button>
-            <span className="kp-art-cat">{article.knowledge_categories?.icon} {article.knowledge_categories?.name}</span>
-          </div>
-          <p className="kp-art-cat" style={{ marginBottom: '0.6rem' }}>{article.knowledge_categories?.icon} {article.knowledge_categories?.name}</p>
-          <h1 className="kp-art-title">{article.title}</h1>
-          {article.excerpt && <p className="kp-art-excerpt">{article.excerpt}</p>}
-          <div className="kp-body">
-            {(article.content || []).map((b, i) => <Block key={b.id || i} b={b}/>)}
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -389,7 +245,14 @@ export default function Knowledge() {
                 <p className="kp-empty-s">บทความจะปรากฏที่นี่เมื่อได้รับการเผยแพร่</p>
               </div>
             ) : list.map(a => (
-              <div key={a.id} className="kp-card" onClick={() => setArticle(a)}>
+              <div
+                key={a.id}
+                className="kp-card"
+                onClick={() => navigate(`/knowledge/${a.slug}`)}
+                role="link"
+                tabIndex={0}
+                onKeyDown={e => e.key === 'Enter' && navigate(`/knowledge/${a.slug}`)}
+              >
                 <div className="kp-card-img-box">
                   {a.cover_url
                     ? <>
@@ -405,6 +268,7 @@ export default function Knowledge() {
                   {a.excerpt && <p className="kp-card-excerpt">{a.excerpt}</p>}
                   <div className="kp-card-foot">
                     <span className="kp-card-read">อ่านบทความ <ChevronRight size={13}/></span>
+                    <span className="kp-card-slug">/knowledge/{a.slug}</span>
                   </div>
                 </div>
               </div>
