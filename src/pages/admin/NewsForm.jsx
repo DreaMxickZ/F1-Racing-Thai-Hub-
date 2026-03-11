@@ -108,6 +108,18 @@ const SCOPED_CSS = `
   }
   .nf-textarea { min-height: 260px; line-height: 1.65; }
 
+  /* Slug preview */
+  .nf-slug-preview {
+    margin-top: 0.6rem;
+    padding: 0.55rem 0.9rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.72rem; letter-spacing: 0.04em;
+    color: rgba(255,255,255,0.25);
+  }
+  .nf-slug-preview span { color: #e10600; }
+
   /* Image preview */
   .nf-img-preview {
     width: 100%; height: 220px; overflow: hidden;
@@ -181,12 +193,31 @@ const SCOPED_CSS = `
   }
 `;
 
+// แปลง title → slug (เอาไว้ auto-suggest เท่านั้น)
+const toSlug = (str) =>
+  str
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')   // เก็บเฉพาะ a-z, 0-9, space, hyphen
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+
+const getUrlPreview = (slug, createdAt) => {
+  const d = createdAt ? new Date(createdAt) : new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  return `/news/${y}/${m}/${slug || 'your-slug'}`;
+};
+
 const NewsForm = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = !!id;
 
-  const [formData, setFormData] = useState({ title: '', content: '', image_url: '' });
+  const [formData, setFormData] = useState({
+    title: '', content: '', image_url: '', slug: '',
+  });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -204,6 +235,20 @@ const NewsForm = () => {
     }
   };
 
+  const handleTitleChange = (e) => {
+    const title = e.target.value;
+    setFormData((prev) => ({
+      ...prev,
+      title,
+      // auto-suggest slug เฉพาะตอนสร้างใหม่ และยังไม่ได้แก้ slug เอง
+      slug: isEdit ? prev.slug : toSlug(title),
+    }));
+  };
+
+  const handleSlugChange = (e) => {
+    setFormData((prev) => ({ ...prev, slug: toSlug(e.target.value) }));
+  };
+
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -215,7 +260,7 @@ const NewsForm = () => {
       const { error: uploadError } = await supabase.storage.from('images').upload(filePath, file);
       if (uploadError) throw uploadError;
       const { data } = supabase.storage.from('images').getPublicUrl(filePath);
-      setFormData({ ...formData, image_url: data.publicUrl });
+      setFormData((prev) => ({ ...prev, image_url: data.publicUrl }));
       alert('อัพโหลดรูปสำเร็จ');
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -227,25 +272,46 @@ const NewsForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.title || !formData.content) { alert('กรุณากรอกข้อมูลให้ครบถ้วน'); return; }
+    if (!formData.title || !formData.content) {
+      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      return;
+    }
+    if (!formData.slug) {
+      alert('กรุณากรอก Slug');
+      return;
+    }
     try {
       setLoading(true);
       if (isEdit) {
         const { error } = await supabase.from('news')
-          .update({ title: formData.title, content: formData.content, image_url: formData.image_url })
+          .update({
+            title: formData.title,
+            content: formData.content,
+            image_url: formData.image_url,
+            slug: formData.slug,
+          })
           .eq('id', id);
         if (error) throw error;
         alert('แก้ไขข่าวสำเร็จ');
       } else {
         const { error } = await supabase.from('news')
-          .insert([{ title: formData.title, content: formData.content, image_url: formData.image_url }]);
+          .insert([{
+            title: formData.title,
+            content: formData.content,
+            image_url: formData.image_url,
+            slug: formData.slug,
+          }]);
         if (error) throw error;
         alert('เพิ่มข่าวสำเร็จ');
       }
       navigate('/admin/news');
     } catch (error) {
       console.error('Error saving news:', error);
-      alert('เกิดข้อผิดพลาดในการบันทึกข่าว');
+      if (error.code === '23505') {
+        alert('Slug นี้ถูกใช้ไปแล้ว กรุณาเปลี่ยน Slug ใหม่');
+      } else {
+        alert('เกิดข้อผิดพลาดในการบันทึกข่าว');
+      }
     } finally {
       setLoading(false);
     }
@@ -286,9 +352,27 @@ const NewsForm = () => {
               type="text"
               className="nf-input"
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={handleTitleChange}
               placeholder="ใส่หัวข้อข่าว..."
             />
+          </div>
+
+          {/* Slug */}
+          <div className="nf-section">
+            <label className="nf-label">
+              <span className="nf-label-dot" />
+              Slug (URL) <span className="nf-label-req">*</span>
+            </label>
+            <input
+              type="text"
+              className="nf-input"
+              value={formData.slug}
+              onChange={handleSlugChange}
+              placeholder="f1-singapore-race-result"
+            />
+            <div className="nf-slug-preview">
+              URL: <span>{getUrlPreview(formData.slug, formData.created_at)}</span>
+            </div>
           </div>
 
           {/* Content */}
@@ -326,7 +410,8 @@ const NewsForm = () => {
                 <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} />
               </label>
               {formData.image_url && (
-                <button type="button" className="nf-btn-rm" onClick={() => setFormData({ ...formData, image_url: '' })}>
+                <button type="button" className="nf-btn-rm"
+                  onClick={() => setFormData({ ...formData, image_url: '' })}>
                   ลบรูป
                 </button>
               )}

@@ -27,7 +27,6 @@ const SCOPED_CSS = `
     object-position: center top;
     filter: saturate(0.85);
   }
-  /* Strong bottom fade so title is readable */
   .f1-news-detail .nd-hero-fade {
     position: absolute; inset: 0;
     background: linear-gradient(
@@ -38,7 +37,6 @@ const SCOPED_CSS = `
       transparent 100%
     );
   }
-  /* Grid overlay */
   .f1-news-detail .nd-hero-grid {
     position: absolute; inset: 0;
     background-image:
@@ -47,7 +45,6 @@ const SCOPED_CSS = `
     background-size: 60px 60px;
     pointer-events: none;
   }
-  /* Title pinned to bottom of hero */
   .f1-news-detail .nd-hero-content {
     position: absolute; bottom: 0; left: 0; right: 0;
     max-width: 860px; margin: 0 auto;
@@ -88,7 +85,6 @@ const SCOPED_CSS = `
     color: #ffffff; margin: 0; padding: 0;
     text-shadow: 0 2px 20px rgba(0,0,0,0.6);
   }
-  /* Scroll hint */
   .f1-news-detail .nd-scroll-hint {
     position: absolute; bottom: 1.5rem; right: 2rem;
     display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
@@ -112,7 +108,6 @@ const SCOPED_CSS = `
     animation: nd-rise 0.5s ease both;
   }
 
-  /* Eyebrow */
   .f1-news-detail .nd-eyebrow {
     display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;
   }
@@ -130,7 +125,6 @@ const SCOPED_CSS = `
     background: linear-gradient(90deg, #e10600, transparent);
   }
 
-  /* Title */
   .f1-news-detail .nd-title {
     font-family: 'Barlow Condensed', sans-serif;
     font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 900;
@@ -138,7 +132,6 @@ const SCOPED_CSS = `
     color: #ffffff; margin: 0 0 1.75rem; padding: 0;
   }
 
-  /* Meta row */
   .f1-news-detail .nd-meta {
     display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem;
     margin-bottom: 2.5rem;
@@ -151,7 +144,6 @@ const SCOPED_CSS = `
     text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500;
   }
 
-  /* Body content */
   .f1-news-detail .nd-body {
     font-size: 1.05rem; line-height: 1.85;
     color: rgba(255,255,255,0.72);
@@ -159,7 +151,6 @@ const SCOPED_CSS = `
     margin-bottom: 2.5rem;
   }
 
-  /* Content image */
   .f1-news-detail .nd-content-img {
     width: 100%; border-radius: 2px;
     margin: 2rem 0;
@@ -269,24 +260,52 @@ const SCOPED_CSS = `
   }
 `;
 
+// สร้าง SEO URL จาก news object
+const buildNewsUrl = (item) => {
+  const d = new Date(item.created_at);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  return `/news/${y}/${m}/${item.slug}`;
+};
+
+// UUID pattern สำหรับตรวจว่า param เป็น UUID (ข่าวเก่า) หรือ slug
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const NewsDetail = () => {
-  const { id } = useParams();
+  // รองรับทั้ง /news/:year/:month/:slug และ /news/:id (fallback UUID)
+  const { year, month, slug, id } = useParams();
   const navigate = useNavigate();
   const [news, setNews] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchNews();
-  }, [id]);
+  }, [slug, id]);
 
   const fetchNews = async () => {
     try {
-      const { data, error } = await supabase
-        .from('news')
-        .select('*')
-        .eq('id', id)
-        .single();
+      let query = supabase.from('news').select('*');
+
+      if (slug) {
+        // เส้นทางใหม่: /news/2025/01/some-slug
+        query = query.eq('slug', slug);
+      } else if (id && UUID_REGEX.test(id)) {
+        // fallback: /news/<uuid> (ข่าวเก่า)
+        query = query.eq('id', id);
+      } else if (id) {
+        // id อาจเป็น slug ที่ไม่มี year/month (กรณีเก่า)
+        query = query.eq('slug', id);
+      }
+
+      const { data, error } = await query.single();
       if (error) throw error;
+
+      // ถ้าเข้ามาด้วย UUID และข่าวมี slug แล้ว → redirect ไป SEO URL
+      if (!slug && data.slug) {
+        navigate(buildNewsUrl(data), { replace: true });
+        return;
+      }
+
       setNews(data);
     } catch (error) {
       console.error('Error fetching news:', error);
@@ -344,7 +363,6 @@ const NewsDetail = () => {
       {/* Content */}
       {!loading && news && (
         <>
-          {/* Meta tags */}
           <Helmet>
             <title>{news.title} | F1 Racing Hub</title>
             <meta name="title" content={news.title} />
@@ -362,14 +380,11 @@ const NewsDetail = () => {
             {news.image_url && <meta property="twitter:image" content={news.image_url} />}
           </Helmet>
 
-          {/* Hero — fullscreen with title pinned at bottom */}
           {news.image_url && (
             <div className="nd-hero">
               <img src={news.image_url} alt={news.title} />
               <div className="nd-hero-grid" />
               <div className="nd-hero-fade" />
-
-              {/* Back + Title overlaid on hero */}
               <div className="nd-hero-content">
                 <button className="nd-hero-back" onClick={() => navigate('/')}>
                   <ArrowLeft size={13} />
@@ -382,8 +397,6 @@ const NewsDetail = () => {
                 </div>
                 <h1 className="nd-hero-title">{news.title}</h1>
               </div>
-
-              {/* Scroll hint */}
               <div className="nd-scroll-hint">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 5v14M5 12l7 7 7-7"/>
@@ -393,10 +406,8 @@ const NewsDetail = () => {
             </div>
           )}
 
-          {/* Article — scrolls below hero */}
           <div className="nd-wrap">
             <article className="nd-article">
-              {/* Meta */}
               <div className="nd-meta">
                 <div className="nd-meta-item">
                   <Calendar size={12} />
@@ -413,19 +424,12 @@ const NewsDetail = () => {
                 </div>
               </div>
 
-              {/* Body */}
               <div className="nd-body">{news.content}</div>
 
-              {/* Content image */}
               {news.image_url && (
-                <img
-                  src={news.image_url}
-                  alt={news.title}
-                  className="nd-content-img"
-                />
+                <img src={news.image_url} alt={news.title} className="nd-content-img" />
               )}
 
-              {/* Share */}
               <div className="nd-share">
                 <p className="nd-share-title">แชร์ข่าวนี้</p>
                 <div className="nd-share-btns">
@@ -446,14 +450,12 @@ const NewsDetail = () => {
                 </div>
               </div>
 
-              {/* CTA */}
               <div className="nd-cta">
                 <p className="nd-cta-label">ข่าวอื่นๆ</p>
                 <button className="nd-cta-btn" onClick={() => navigate('/')}>
                   ดูข่าวทั้งหมด
                 </button>
               </div>
-
             </article>
           </div>
         </>

@@ -147,6 +147,14 @@ const SCOPED_CSS = `
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 1.4rem; font-weight: 800; text-transform: uppercase;
     letter-spacing: 0.02em; color: #ffffff; margin: 0 0 0.5rem; line-height: 1.1;
+    text-decoration: none; display: block;
+    transition: color 0.2s ease;
+  }
+  .nm-item-title:hover { color: #e10600; }
+  .nm-item-slug {
+    font-size: 0.7rem; color: rgba(255,255,255,0.2);
+    font-weight: 500; letter-spacing: 0.04em;
+    margin: 0 0 0.4rem; font-family: monospace;
   }
   .nm-item-excerpt {
     font-size: 0.82rem; color: rgba(255,255,255,0.35);
@@ -171,6 +179,14 @@ const SCOPED_CSS = `
   .nm-btn-del { background: rgba(225,6,0,0.12); color: #e10600; }
   .nm-btn-del:hover { background: #e10600; color: #fff; transform: translateY(-2px); }
 
+  /* No slug badge */
+  .nm-no-slug {
+    display: inline-block;
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    background: rgba(225,6,0,0.15); color: #e10600;
+    padding: 0.2rem 0.5rem; margin-bottom: 0.4rem;
+  }
+
   /* Empty state */
   .nm-empty {
     background: #111114; border: 1px solid rgba(255,255,255,0.05);
@@ -192,6 +208,15 @@ const SCOPED_CSS = `
     to   { opacity: 1; transform: translateY(0); }
   }
 `;
+
+// สร้าง URL แบบ SEO จาก news item
+const buildNewsUrl = (item) => {
+  const d = new Date(item.created_at);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  // ถ้ายังไม่มี slug ใช้ id เป็น fallback
+  return item.slug ? `/news/${y}/${m}/${item.slug}` : `/news/${item.id}`;
+};
 
 const NewsManagement = () => {
   const [news, setNews] = useState([]);
@@ -275,7 +300,18 @@ const NewsManagement = () => {
                 <div className="nm-item-body">
                   <div className="nm-item-info">
                     <span className="nm-item-num">NEWS — {String(i + 1).padStart(2, '0')}</span>
-                    <h3 className="nm-item-title">{item.title}</h3>
+
+                    {/* Title เป็น link ไปหน้าดูข่าว */}
+                    <Link to={buildNewsUrl(item)} className="nm-item-title" target="_blank">
+                      {item.title}
+                    </Link>
+
+                    {/* แสดง slug หรือ warning ถ้ายังไม่มี */}
+                    {item.slug
+                      ? <p className="nm-item-slug">/{buildNewsUrl(item)}</p>
+                      : <span className="nm-no-slug">⚠ ยังไม่มี slug — กรุณาแก้ไข</span>
+                    }
+
                     <p className="nm-item-excerpt">{item.content}</p>
                     <span className="nm-item-date">
                       {new Date(item.created_at).toLocaleDateString('th-TH', {

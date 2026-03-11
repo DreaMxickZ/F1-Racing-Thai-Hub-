@@ -33,71 +33,57 @@ function App() {
         <Router>
           <div className="min-h-screen flex flex-col">
             <Navbar />
-            
+
             <main className="flex-1">
               <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/news" element={<News />} />
-              <Route path="/news/:id" element={<NewsDetail />} />
-              <Route path="/drivers" element={<Drivers />} />
-              <Route path="/teams" element={<Teams />} />
-              <Route path="/circuits" element={<Circuits />} />
-              <Route path="/schedule" element={<Schedule />} />
-              <Route path="/standings" element={<Standings />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/knowledge" element={<Knowledge />} />
-              <Route path="/results" element={<Results />} />
+                {/* Public Routes */}
+                <Route path="/" element={<Home />} />
+                <Route path="/news" element={<News />} />
+                {/* SEO-friendly news URL: /news/2025/01/slug */}
+                <Route path="/news/:year/:month/:slug" element={<NewsDetail />} />
+                {/* Fallback for old UUID links */}
+                <Route path="/news/:id" element={<NewsDetail />} />
+                <Route path="/drivers" element={<Drivers />} />
+                <Route path="/teams" element={<Teams />} />
+                <Route path="/circuits" element={<Circuits />} />
+                <Route path="/schedule" element={<Schedule />} />
+                <Route path="/standings" element={<Standings />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/knowledge" element={<Knowledge />} />
+                <Route path="/results" element={<Results />} />
 
-              
-              {/* Protected Admin Routes */}
-              <Route path="/admin" element={
-                <ProtectedRoute>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/news" element={
-                <ProtectedRoute>
-                  <NewsManagement />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/news/create" element={
-                <ProtectedRoute>
-                  <NewsForm />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/news/edit/:id" element={
-                <ProtectedRoute>
-                  <NewsForm />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/knowledge" element={
-                <ProtectedRoute>
-                  <KnowledgeManagement />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/knowledge/create" element={
-                <ProtectedRoute>
-                  <KnowledgeForm />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/knowledge/edit/:id" element={
-                <ProtectedRoute>
-                  <KnowledgeForm />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/drivers" element={
-                <ProtectedRoute>
-                  <DriverManagement />
-                </ProtectedRoute>
-              } />
-            </Routes>
-          </main>
-          
-          <Footer />
-        </div>
-      </Router>
-    </AuthProvider>
+                {/* Protected Admin Routes */}
+                <Route path="/admin" element={
+                  <ProtectedRoute><AdminDashboard /></ProtectedRoute>
+                } />
+                <Route path="/admin/news" element={
+                  <ProtectedRoute><NewsManagement /></ProtectedRoute>
+                } />
+                <Route path="/admin/news/create" element={
+                  <ProtectedRoute><NewsForm /></ProtectedRoute>
+                } />
+                <Route path="/admin/news/edit/:id" element={
+                  <ProtectedRoute><NewsForm /></ProtectedRoute>
+                } />
+                <Route path="/admin/knowledge" element={
+                  <ProtectedRoute><KnowledgeManagement /></ProtectedRoute>
+                } />
+                <Route path="/admin/knowledge/create" element={
+                  <ProtectedRoute><KnowledgeForm /></ProtectedRoute>
+                } />
+                <Route path="/admin/knowledge/edit/:id" element={
+                  <ProtectedRoute><KnowledgeForm /></ProtectedRoute>
+                } />
+                <Route path="/admin/drivers" element={
+                  <ProtectedRoute><DriverManagement /></ProtectedRoute>
+                } />
+              </Routes>
+            </main>
+
+            <Footer />
+          </div>
+        </Router>
+      </AuthProvider>
     </HelmetProvider>
   );
 }

@@ -74,6 +74,7 @@ const MENUS = [
   { to:'/admin/news',      icon:Newspaper, name:'จัดการข่าวสาร',   desc:'เพิ่ม แก้ไข ลบข่าว F1 พร้อมรูปภาพ',              iconBg:'rgba(225,6,0,0.1)',       iconColor:'#e10600',  stripe:'#e10600'  },
   { to:'/admin/knowledge', icon:BookOpen,  name:'จัดการความรู้',   desc:'เขียนบทความด้วย Block Editor พร้อมรูปภาพ',        iconBg:'rgba(54,113,198,0.12)',    iconColor:'#3671C6',  stripe:'#3671C6'  },
   { to:'/admin/drivers',   icon:Users,     name:'จัดการนักแข่ง',  desc:'อัพโหลดรูปนักแข่ง รูปรถ และข้อมูลทีม',            iconBg:'rgba(34,153,113,0.12)',    iconColor:'#229971',  stripe:'#229971'  },
+  
 ];
 
 export default function AdminDashboard() {
@@ -106,6 +107,7 @@ export default function AdminDashboard() {
             { label:'ข่าวสาร',    num:stats.news,      unit:'บทความ', accent:'#e10600', ghost:'N' },
             { label:'ความรู้ F1', num:stats.knowledge, unit:'บทความ', accent:'#3671C6', ghost:'K' },
             { label:'ทีม F1',    num:11,              unit:'ทีม',   accent:'#229971', ghost:'T' },
+            
           ].map((s,i) => (
             <div key={i} className="ad-stat">
               <div className="ad-stat-accent" style={{background:s.accent}}/>
