@@ -18,7 +18,7 @@ import Login from './pages/Login';
 import Knowledge from './pages/Knowledge';
 import KnowledgeDetail from './pages/KnowledgeDetail';
 import Results from './pages/Results';
-
+import RaceResult from './pages/RaceResult';
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import NewsManagement from './pages/admin/NewsManagement';
@@ -54,6 +54,8 @@ function App() {
                 {/* SEO-friendly knowledge URL: /knowledge/:slug */}
                 <Route path="/knowledge/:slug" element={<KnowledgeDetail />} />
                 <Route path="/results" element={<Results />} />
+                
+                <Route path="/results/:season/:slug" element={<RaceResult />} />
 
                 {/* Protected Admin Routes */}
                 <Route path="/admin" element={

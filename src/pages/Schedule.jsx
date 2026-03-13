@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Calendar, MapPin, Clock, ChevronRight, Flag, BarChart2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { jolpicaApi } from '../services/f1Api';
-import RaceResult from './RaceResult'; // adjust import path if needed
 
 const SCOPED_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;0,900;1,700&family=Barlow:wght@400;500;600&display=swap');
@@ -338,8 +338,6 @@ const TOTAL_LAPS = {
   vegas: 50, losail: 57, yas_marina: 58,
 };
 
-// ── Country name → ISO 3166-1 alpha-2 code ────────────────────────────────────
-// Used with flagcdn.com: https://flagcdn.com/24x18/{code}.png
 const COUNTRY_CODE = {
   Australia:       'au',
   Japan:           'jp',
@@ -367,10 +365,6 @@ const COUNTRY_CODE = {
   Canada:          'ca',
 };
 
-/**
- * Returns a flagcdn.com <img> URL for a given country string.
- * Falls back to null if the country is unknown.
- */
 const getCountryFlagUrl = (country) => {
   if (!country) return null;
   const code = COUNTRY_CODE[country]
@@ -389,27 +383,36 @@ const fmtSession = (session) => {
   };
 };
 
-const isPast = (dateStr) => {
-  const raceDate = new Date(dateStr);
-  const showFrom = new Date(raceDate);
-  showFrom.setDate(showFrom.getDate() - 2);
-  return showFrom < new Date();
+// แปลง raceName → slug ให้ตรงกับ races2026.js
+const toSlug = (raceName) =>
+  raceName
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+
+// ── ปุ่มจะแสดงเมื่อเวลา FP1 ของสนามนั้น + 1 ชั่วโมงผ่านไปแล้ว ──────────────
+const isPast = (race) => {
+  const fp1 = race?.FirstPractice;
+  if (!fp1?.date) return false;
+  const fp1Date = new Date(fp1.date + 'T' + (fp1.time || '00:00:00'));
+  fp1Date.setHours(fp1Date.getHours() + 1);
+  return new Date() > fp1Date;
 };
 
 const isNext = (races, index) => {
   for (let i = 0; i < races.length; i++) {
-    if (!isPast(races[i].date)) return i === index;
+    if (!isPast(races[i])) return i === index;
   }
   return false;
 };
 
 /* ─────────────────────────────────────────
-   SCHEDULE (with navigation to RaceResult)
+   SCHEDULE
 ───────────────────────────────────────── */
 const Schedule = () => {
-  const [schedule,    setSchedule]    = useState([]);
-  const [loading,     setLoading]     = useState(true);
-  const [selectedRace, setSelectedRace] = useState(null);
+  const [schedule, setSchedule] = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     jolpicaApi.getSchedule(2026)
@@ -418,18 +421,8 @@ const Schedule = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  if (selectedRace) {
-    return (
-      <RaceResult
-        race={selectedRace}
-        season={2026}
-        onBack={() => setSelectedRace(null)}
-      />
-    );
-  }
-
   const totalRaces = schedule.length;
-  const pastCount  = schedule.filter(r => isPast(r.date)).length;
+  const pastCount  = schedule.filter(r => isPast(r)).length;
 
   const buildSessions = (race) => {
     const rows = [];
@@ -490,8 +483,8 @@ const Schedule = () => {
             {/* Race List */}
             <div className="sp-list">
               {schedule.map((race, index) => {
-                const past    = isPast(race.date);
-                const next    = isNext(schedule, index);
+                const past     = isPast(race);
+                const next     = isNext(schedule, index);
                 const isSprint = !!(race.Sprint);
                 const raceSession = fmtSession({ date: race.date, time: race.time });
                 const sessions = buildSessions(race);
@@ -568,7 +561,7 @@ const Schedule = () => {
                           {past && (
                             <button
                               className="sp-result-btn"
-                              onClick={() => setSelectedRace(race)}
+                              onClick={() => navigate(`/results/2026/${toSlug(race.raceName)}`)}
                             >
                               <BarChart2 size={12} />
                               ดูผลการแข่งขัน

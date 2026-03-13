@@ -207,7 +207,8 @@ const Footer = () => {
         {/* Bottom bar */}
         <div className="ft-bottom">
           <p className="ft-copy">© 2026 F1 Thai Hub — All rights reserved</p>
-          <p className="ft-made">Made with by Claude AI</p>
+          <p className="ft-made">เว็บไซต์นี้เป็นเว็บไซต์แฟนที่จัดทำขึ้นโดยผู้ชื่นชอบ Formula 1 
+ไม่มีส่วนเกี่ยวข้องหรือเป็นเว็บไซต์อย่างเป็นทางการของ Formula One หรือ FIA</p>
         </div>
       </div>
     </footer>

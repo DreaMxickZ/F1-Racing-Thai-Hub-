@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronLeft, Zap, Flag, Timer, AlertTriangle, Clock, Loader, Info, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { jolpicaApi } from '../services/f1Api';
+import { getRaceBySlug } from '../data/races2026';
 
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Russo+One&family=DM+Mono:wght@400;500&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:ital,wght@0,700;0,800;0,900;1,800&display=swap');
@@ -154,161 +157,28 @@ const CSS = `
 /* ── AVG lap time cell ── */
 .rr4-avg-td{font-family:'DM Mono',monospace;font-size:0.9rem;font-weight:500;text-align:right;white-space:nowrap;color:rgba(255,255,255,0.38);}
 .rr4-avg-td.best-avg{color:rgba(100,210,255,0.8);}
-/* ── AVG summary bar (LapTable, single driver view) ── */
 .rr4-avg-bar{display:flex;align-items:center;gap:0.75rem;background:rgba(80,180,255,0.05);border:1px solid rgba(80,180,255,0.12);border-radius:3px;padding:0.6rem 1rem;margin-bottom:1rem;font-family:'DM Mono',monospace;font-size:0.82rem;color:rgba(255,255,255,0.3);}
 .rr4-avg-bar strong{color:rgba(100,210,255,0.75);font-size:0.88rem;}
 .rr4-avg-label{font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.18);}
 
 /* ══════════════════════════════════════
-   GRID VS FINISH — dedicated styles
+   GRID VS FINISH
 ══════════════════════════════════════ */
-.gvf-header-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2px;
-  margin-bottom: 2rem;
-}
-.gvf-stat-card {
-  background: #111115;
-  border: 1px solid rgba(255,255,255,0.06);
-  padding: 1.25rem 1.5rem;
-  animation: rr4-rise 0.4s ease both;
-}
-.gvf-stat-label {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.22);
-  margin-bottom: 0.4rem;
-}
-.gvf-stat-val {
-  font-family: 'Russo One', sans-serif;
-  font-size: 1.8rem;
-  line-height: 1;
-  margin-bottom: 0.2rem;
-}
-.gvf-stat-sub {
-  font-family: 'DM Mono', monospace;
-  font-size: 0.72rem;
-  color: rgba(255,255,255,0.22);
-}
-.gvf-pos-num {
-  font-family: 'Russo One', sans-serif;
-  font-size: 1.35rem;
-  line-height: 1;
-  text-align: center;
-  min-width: 40px;
-}
-.gvf-arrow-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 0 0.6rem;
-}
-.gvf-delta-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  padding: 0.22rem 0.6rem;
-  border-radius: 3px;
-  white-space: nowrap;
-}
-.gvf-delta-badge.gain {
-  background: rgba(0, 200, 120, 0.12);
-  border: 1px solid rgba(0, 200, 120, 0.3);
-  color: #00d47a;
-}
-.gvf-delta-badge.loss {
-  background: rgba(255, 60, 60, 0.10);
-  border: 1px solid rgba(255, 60, 60, 0.28);
-  color: #ff6060;
-}
-.gvf-delta-badge.same {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.3);
-}
-.gvf-pos-arrow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.gvf-pos-arrow.gain { background: rgba(0,200,120,0.15); color: #00d47a; }
-.gvf-pos-arrow.loss { background: rgba(255,60,60,0.12); color: #ff6060; }
-.gvf-pos-arrow.same { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.25); }
-.gvf-flow-bar {
-  position: relative;
-  height: 6px;
-  background: rgba(255,255,255,0.05);
-  border-radius: 3px;
-  overflow: visible;
-  margin: 0 0.5rem;
-  flex: 1;
-}
-.gvf-flow-fill {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.5s ease;
-}
-.gvf-dnf-badge {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 0.18rem 0.45rem;
-  border-radius: 2px;
-  background: rgba(255,60,60,0.1);
-  border: 1px solid rgba(255,60,60,0.25);
-  color: rgba(255,100,100,0.8);
-}
-.gvf-row-dnf { opacity: 0.55; }
-.gvf-row-dnf:hover { opacity: 0.80 !important; }
-.gvf-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.65rem;
-  background: rgba(0,200,120,0.05);
-  border: 1px solid rgba(0,200,120,0.12);
-  border-radius: 3px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1.5rem;
-  font-size: 0.83rem;
-  color: rgba(255,255,255,0.35);
-  line-height: 1.6;
-}
-.gvf-note strong { color: rgba(0,200,120,0.7); }
-.gvf-legend {
-  display: flex;
-  gap: 1.25rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.5rem;
-  align-items: center;
-}
-.gvf-legend-item {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.35);
-}
+.gvf-header-cards { display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-bottom:2rem; }
+.gvf-stat-card { background:#111115;border:1px solid rgba(255,255,255,0.06);padding:1.25rem 1.5rem;animation:rr4-rise 0.4s ease both; }
+.gvf-stat-label { font-family:'Barlow Condensed',sans-serif;font-size:0.72rem;font-weight:800;letter-spacing:0.22em;text-transform:uppercase;color:rgba(255,255,255,0.22);margin-bottom:0.4rem; }
+.gvf-stat-val { font-family:'Russo One',sans-serif;font-size:1.8rem;line-height:1;margin-bottom:0.2rem; }
+.gvf-stat-sub { font-family:'DM Mono',monospace;font-size:0.72rem;color:rgba(255,255,255,0.22); }
+.gvf-delta-badge { display:inline-flex;align-items:center;gap:0.3rem;font-family:'Barlow Condensed',sans-serif;font-size:0.95rem;font-weight:900;letter-spacing:0.06em;padding:0.22rem 0.6rem;border-radius:3px;white-space:nowrap; }
+.gvf-delta-badge.gain { background:rgba(0,200,120,0.12);border:1px solid rgba(0,200,120,0.3);color:#00d47a; }
+.gvf-delta-badge.loss { background:rgba(255,60,60,0.10);border:1px solid rgba(255,60,60,0.28);color:#ff6060; }
+.gvf-delta-badge.same { background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.3); }
+.gvf-note { display:flex;align-items:flex-start;gap:0.65rem;background:rgba(0,200,120,0.05);border:1px solid rgba(0,200,120,0.12);border-radius:3px;padding:0.75rem 1rem;margin-bottom:1.5rem;font-size:0.83rem;color:rgba(255,255,255,0.35);line-height:1.6; }
+.gvf-note strong { color:rgba(0,200,120,0.7); }
+.gvf-legend { display:flex;gap:1.25rem;flex-wrap:wrap;margin-bottom:1.5rem;align-items:center; }
+.gvf-legend-item { display:flex;align-items:center;gap:0.45rem;font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.35); }
+.gvf-row-dnf { opacity:0.55; }
+.gvf-row-dnf:hover { opacity:0.80 !important; }
 
 @keyframes rr4-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes rr4-slide{0%{transform:translateX(-100%)}100%{transform:translateX(400%)}}
@@ -753,15 +623,12 @@ const RaceTable = ({ results, showPts=true, stints=[] }) => {
 /* ═══ QUAL TABLE ═══ */
 const QualTable = ({ results, allDrivers=[], label='Qualifying', stints=[] }) => {
   const [hovered, setHovered] = useState(null);
-
   if(!results.length) return <div className="rr4-empty">ยังไม่มีข้อมูล {label}</div>;
-
   const stintMap={};
   stints.forEach(s=>{const k=String(s.driver_number);if(!stintMap[k])stintMap[k]=[];stintMap[k].push(s);});
   Object.values(stintMap).forEach(arr=>arr.sort((a,b)=>(a.lap_start??0)-(b.lap_start??0)));
   const hasStints=stints.length>0;
   const totalLaps=hasStints?Math.max(...stints.map(s=>s.lap_end??0),1):1;
-
   const hasQ2=results.some(r=>r.Q2),hasQ3=results.some(r=>r.Q3);
   const fastest=key=>results.reduce((b,r)=>(!r[key]?b:(!b||r[key]<b)?r[key]:b),null);
   const fQ1=fastest('Q1'),fQ2=fastest('Q2'),fQ3=fastest('Q3');
@@ -770,15 +637,8 @@ const QualTable = ({ results, allDrivers=[], label='Qualifying', stints=[] }) =>
   const missing=allDrivers.filter(r=>r.Driver?.driverId&&!qualIds.has(r.Driver.driverId)).map(r=>({Driver:r.Driver,Constructor:r.Constructor,number:r.number,position:'—',Q1:null,Q2:null,Q3:null}));
   const q3c=hasQ3?10:null,q2c=hasQ2?15:null;
   const colSpan=3+(hasStints?1:0)+1+(hasQ2?1:0)+(hasQ3?1:0);
-
-  const QCell=({val,best,elim,isPole})=>!val
-    ?<td className="rr4-qtd none">—</td>
-    :<td className={`rr4-qtd ${val===best&&isPole?'pole':val===best?'q2best':elim?'elim':''}`}>{val}{val===best&&isPole?' ★':''}</td>;
-
-  const ZoneRow=({label:zl,color})=>(
-    <tr><td colSpan={colSpan} style={{padding:'0.3rem 0.9rem',fontFamily:"'Barlow Condensed',sans-serif",fontSize:'0.68rem',fontWeight:800,letterSpacing:'0.2em',textTransform:'uppercase',color,borderTop:`1px solid ${color}44`,borderBottom:`1px solid rgba(255,255,255,0.04)`,background:`${color}08`}}>── {zl}</td></tr>
-  );
-
+  const QCell=({val,best,elim,isPole})=>!val?<td className="rr4-qtd none">—</td>:<td className={`rr4-qtd ${val===best&&isPole?'pole':val===best?'q2best':elim?'elim':''}`}>{val}{val===best&&isPole?' ★':''}</td>;
+  const ZoneRow=({label:zl,color})=>(<tr><td colSpan={colSpan} style={{padding:'0.3rem 0.9rem',fontFamily:"'Barlow Condensed',sans-serif",fontSize:'0.68rem',fontWeight:800,letterSpacing:'0.2em',textTransform:'uppercase',color,borderTop:`1px solid ${color}44`,borderBottom:`1px solid rgba(255,255,255,0.04)`,background:`${color}08`}}>── {zl}</td></tr>);
   const rows=[];
   sorted.forEach((r,i)=>{
     const pos=parseInt(r.position);
@@ -790,18 +650,13 @@ const QualTable = ({ results, allDrivers=[], label='Qualifying', stints=[] }) =>
         <td className={`rr4-pos ${pos<=3?`p${pos}`:''}`} style={pos>3?{fontSize:'1.1rem',color:'rgba(255,255,255,0.3)'}:{}}>{pos}</td>
         <td><DrvCell last={r.Driver?.familyName} first={r.Driver?.givenName} num={r.number} color={teamColor(r.Constructor?.name)}/></td>
         <td className="rr4-team-td">{r.Constructor?.name}</td>
-        {hasStints&&(
-          <td style={{minWidth:'100px',paddingTop:'0.85rem',paddingBottom:'0.85rem'}}>
-            <InlineTyreBar stintMap={stintMap} driverKey={r.number} totalLaps={totalLaps} hovered={hovered} setHovered={setHovered}/>
-          </td>
-        )}
+        {hasStints&&(<td style={{minWidth:'100px',paddingTop:'0.85rem',paddingBottom:'0.85rem'}}><InlineTyreBar stintMap={stintMap} driverKey={r.number} totalLaps={totalLaps} hovered={hovered} setHovered={setHovered}/></td>)}
         <QCell val={r.Q1} best={fQ1} elim={false} isPole={false}/>
         {hasQ2&&<QCell val={r.Q2} best={fQ2} elim={eQ1} isPole={false}/>}
         {hasQ3&&<QCell val={r.Q3} best={fQ3} elim={eQ2} isPole={true}/>}
       </tr>
     );
   });
-
   if(missing.length>0){
     rows.push(<ZoneRow key="dns" label={`ไม่มีเวลา · ${missing.length} คน`} color="rgba(120,120,120,0.5)"/>);
     missing.forEach((r,i)=>rows.push(
@@ -816,7 +671,6 @@ const QualTable = ({ results, allDrivers=[], label='Qualifying', stints=[] }) =>
       </tr>
     ));
   }
-
   return (
     <div className="rr4-tbl-wrap">
       <table className="rr4-tbl">
@@ -836,17 +690,13 @@ const QualTable = ({ results, allDrivers=[], label='Qualifying', stints=[] }) =>
 /* ═══ PRACTICE TABLE ═══ */
 const PracticeTable = ({ laps, stints, drivers, sessionName }) => {
   const [hovered, setHovered] = useState(null);
-
   if(!laps.length) return <div className="rr4-empty">ไม่พบข้อมูล {sessionName} จาก OpenF1</div>;
-
   const dMap={};
   drivers.forEach(d=>{dMap[d.driver_number]=d;});
-
   const best={};
   laps.forEach(l=>{if(!l.lap_duration||l.lap_duration<=0) return; if(!best[l.driver_number]||l.lap_duration<best[l.driver_number].lap_duration) best[l.driver_number]=l;});
   const sorted=Object.values(best).sort((a,b)=>a.lap_duration-b.lap_duration);
   if(!sorted.length) return <div className="rr4-empty">ไม่มีข้อมูล Lap Time ใน {sessionName}</div>;
-
   const ref=sorted[0].lap_duration;
   const stintMap={};
   stints.forEach(s=>{const k=String(s.driver_number);if(!stintMap[k])stintMap[k]=[];stintMap[k].push(s);});
@@ -854,7 +704,6 @@ const PracticeTable = ({ laps, stints, drivers, sessionName }) => {
   const totalLaps=Math.max(...stints.map(s=>s.lap_end??0),1);
   const hasStints=stints.length>0;
   const fmtS=v=>v!=null?v.toFixed(3):'—';
-
   return (
     <div className="rr4-tbl-wrap">
       <table className="rr4-tbl">
@@ -873,11 +722,7 @@ const PracticeTable = ({ laps, stints, drivers, sessionName }) => {
                 <td className={`rr4-pos ${i===0?'p1':i===1?'p2':i===2?'p3':''}`}>{i+1}</td>
                 <td><DrvCell last={d?.last_name??d?.full_name?.split(' ').pop()??`#${lap.driver_number}`} first={d?.first_name??''} num={lap.driver_number} color={color}/></td>
                 <td className="rr4-team-td">{d?.team_name??'—'}</td>
-                {hasStints&&(
-                  <td style={{minWidth:'110px',paddingTop:'0.85rem',paddingBottom:'0.85rem'}}>
-                    <InlineTyreBar stintMap={stintMap} driverKey={lap.driver_number} totalLaps={totalLaps} hovered={hovered} setHovered={setHovered} minWidth="110px"/>
-                  </td>
-                )}
+                {hasStints&&(<td style={{minWidth:'110px',paddingTop:'0.85rem',paddingBottom:'0.85rem'}}><InlineTyreBar stintMap={stintMap} driverKey={lap.driver_number} totalLaps={totalLaps} hovered={hovered} setHovered={setHovered} minWidth="110px"/></td>)}
                 <td className={`rr4-t ${i===0?'p1t':''}`}>{toMMSS(lap.lap_duration)}{i===0&&<span className="rr4-fl"><Zap size={9}/> P1</span>}</td>
                 <td className="rr4-t gap">{i===0?'—':`+${(lap.lap_duration-ref).toFixed(3)}`}</td>
                 <td className="rr4-laps-td">{lap.lap_number}</td>
@@ -897,29 +742,23 @@ const PracticeTable = ({ laps, stints, drivers, sessionName }) => {
 const LapTable = ({ laps, drivers }) => {
   const [sel,setSel]=useState('ALL');
   if(!laps.length) return <div className="rr4-empty">ไม่พบข้อมูล Lap Times จาก OpenF1</div>;
-
   const dMap={};
   drivers.forEach(d=>{dMap[d.driver_number]=d;});
-
   const avgMap = computeAvgMap(laps);
   const avgVals = Object.values(avgMap).filter(Boolean);
   const bestAvg = avgVals.length ? Math.min(...avgVals) : null;
-
   const filtered=sel==='ALL'?laps:laps.filter(l=>String(l.driver_number)===sel);
   const durs=laps.map(l=>l.lap_duration).filter(v=>v&&v>0);
   const gMin=Math.min(...durs),gMax=Math.max(...durs.filter(v=>v<gMin*1.15));
   const range=gMax-gMin||1;
   const uniq=[...new Set(laps.map(l=>String(l.driver_number)))].sort((a,b)=>+a-+b);
   const fmtS=v=>v!=null?v.toFixed(3):'—';
-
   const selAvg = sel !== 'ALL' ? avgMap[sel] : null;
-
   const driverSummaries = uniq.map(num => {
     const driverLaps = laps.filter(l => String(l.driver_number) === num && l.lap_duration > 0);
     const fastest = driverLaps.length ? Math.min(...driverLaps.map(l => l.lap_duration)) : null;
     return { num, fastest, avg: avgMap[num] ?? null, count: driverLaps.length };
   }).sort((a, b) => (a.fastest ?? 999) - (b.fastest ?? 999));
-
   return (
     <>
       <div className="rr4-lap-filter">
@@ -930,18 +769,14 @@ const LapTable = ({ laps, drivers }) => {
           return <button key={num} className={`rr4-fbtn ${sel===num?'active':''}`} onClick={()=>setSel(num)} style={sel===num&&c?{borderColor:c,color:c}:{}}>{d?.name_acronym??`#${num}`}</button>;
         })}
       </div>
-
       {sel !== 'ALL' && selAvg != null && (
         <div className="rr4-avg-bar">
           <span style={{fontSize:'1rem'}}>⏱</span>
           <span className="rr4-avg-label">เฉลี่ย (AVG)</span>
           <strong>{toMMSS(selAvg)}</strong>
-          <span style={{color:'rgba(255,255,255,0.15)',fontSize:'0.68rem'}}>
-            · คำนวณจากรอบปกติ (ตัดรอบ Pit / SC ออก)
-          </span>
+          <span style={{color:'rgba(255,255,255,0.15)',fontSize:'0.68rem'}}>· คำนวณจากรอบปกติ (ตัดรอบ Pit / SC ออก)</span>
         </div>
       )}
-
       {sel === 'ALL' && driverSummaries.length > 0 && (
         <div style={{marginBottom:'1.75rem'}}>
           <div className="rr4-sec-hd" style={{marginBottom:'0.75rem'}}>
@@ -952,11 +787,7 @@ const LapTable = ({ laps, drivers }) => {
           <div className="rr4-tbl-wrap">
             <table className="rr4-tbl" style={{minWidth:'360px'}}>
               <thead><tr>
-                <th className="c">P</th>
-                <th>นักแข่ง</th>
-                <th className="r">Fastest Lap</th>
-                <th className="r">AVG Lap</th>
-                <th className="c">รอบที่ใช้คำนวณ</th>
+                <th className="c">P</th><th>นักแข่ง</th><th className="r">Fastest Lap</th><th className="r">AVG Lap</th><th className="c">รอบที่ใช้คำนวณ</th>
               </tr></thead>
               <tbody>
                 {driverSummaries.map((ds, i) => {
@@ -966,22 +797,9 @@ const LapTable = ({ laps, drivers }) => {
                   return (
                     <tr key={ds.num} style={{animationDelay:`${i*0.02}s`}}>
                       <td className={`rr4-pos ${i===0?'p1':i===1?'p2':i===2?'p3':''}`}>{i+1}</td>
-                      <td>
-                        <DrvCell
-                          last={d?.last_name ?? d?.full_name?.split(' ').pop() ?? `#${ds.num}`}
-                          first={d?.first_name ?? ''}
-                          num={ds.num}
-                          color={color}
-                        />
-                      </td>
-                      <td className={`rr4-t ${i===0?'p1t':''}`}>
-                        {ds.fastest ? toMMSS(ds.fastest) : '—'}
-                        {i===0 && <span className="rr4-fl"><Zap size={9}/> FL</span>}
-                      </td>
-                      <td className={`rr4-avg-td ${isBestAvg ? 'best-avg' : ''}`}>
-                        {ds.avg ? toMMSS(ds.avg) : '—'}
-                        {isBestAvg && <span style={{marginLeft:'0.35rem',fontFamily:"'Barlow Condensed',sans-serif",fontSize:'0.68rem',fontWeight:800,letterSpacing:'0.08em',color:'rgba(100,210,255,0.7)'}}>BEST AVG</span>}
-                      </td>
+                      <td><DrvCell last={d?.last_name ?? d?.full_name?.split(' ').pop() ?? `#${ds.num}`} first={d?.first_name ?? ''} num={ds.num} color={color}/></td>
+                      <td className={`rr4-t ${i===0?'p1t':''}`}>{ds.fastest ? toMMSS(ds.fastest) : '—'}{i===0 && <span className="rr4-fl"><Zap size={9}/> FL</span>}</td>
+                      <td className={`rr4-avg-td ${isBestAvg ? 'best-avg' : ''}`}>{ds.avg ? toMMSS(ds.avg) : '—'}{isBestAvg && <span style={{marginLeft:'0.35rem',fontFamily:"'Barlow Condensed',sans-serif",fontSize:'0.68rem',fontWeight:800,letterSpacing:'0.08em',color:'rgba(100,210,255,0.7)'}}>BEST AVG</span>}</td>
                       <td className="rr4-laps-td">{ds.count}</td>
                     </tr>
                   );
@@ -994,14 +812,12 @@ const LapTable = ({ laps, drivers }) => {
           </div>
         </div>
       )}
-
       <div className="rr4-tbl-wrap">
         <table className="rr4-tbl">
           <thead><tr>
             <th className="c">Lap</th>
             {sel==='ALL'&&<th>นักแข่ง</th>}
-            <th className="r">เวลา (วิ)</th>
-            <th>กราฟ</th>
+            <th className="r">เวลา (วิ)</th><th>กราฟ</th>
             <th className="c">S1</th><th className="c">S2</th><th className="c">S3</th>
           </tr></thead>
           <tbody>
@@ -1015,9 +831,9 @@ const LapTable = ({ laps, drivers }) => {
                   {sel==='ALL'&&<td><div className="rr4-drv"><div className="rr4-bar" style={{background:color,height:28}}/><div className="rr4-drv-last" style={{fontSize:'0.95rem'}}>{d?.name_acronym??`#${lap.driver_number}`}</div></div></td>}
                   <td className={`rr4-lap-t-td ${isFastest?'fastest':''}`}>{dur!=null?dur.toFixed(3):'—'}{isFastest&&<span className="rr4-fl"><Zap size={9}/> FL</span>}</td>
                   <td className="rr4-bar-wrap"><div className="rr4-bar-bg"><div className="rr4-bar-fill" style={{width:`${barW}%`,background:isFastest?'#b44eff':'#e10600'}}/></div></td>
-                  <td className="rr4-sec-td">{(lap.duration_sector_1)!=null?lap.duration_sector_1.toFixed(3):'—'}</td>
-                  <td className="rr4-sec-td">{(lap.duration_sector_2)!=null?lap.duration_sector_2.toFixed(3):'—'}</td>
-                  <td className="rr4-sec-td">{(lap.duration_sector_3)!=null?lap.duration_sector_3.toFixed(3):'—'}</td>
+                  <td className="rr4-sec-td">{lap.duration_sector_1!=null?lap.duration_sector_1.toFixed(3):'—'}</td>
+                  <td className="rr4-sec-td">{lap.duration_sector_2!=null?lap.duration_sector_2.toFixed(3):'—'}</td>
+                  <td className="rr4-sec-td">{lap.duration_sector_3!=null?lap.duration_sector_3.toFixed(3):'—'}</td>
                 </tr>
               );
             })}
@@ -1033,34 +849,23 @@ const LapTable = ({ laps, drivers }) => {
 const PitTable = ({ pits, drivers, stints=[] }) => {
   const [hovered, setHovered] = useState(null);
   if(!pits.length) return <div className="rr4-empty">ไม่พบข้อมูล Pit Stops จาก OpenF1</div>;
-
   const dMap={};
   drivers.forEach(d=>{dMap[d.driver_number]=d;});
-
   const stintMap={};
   stints.forEach(s=>{const k=String(s.driver_number);if(!stintMap[k])stintMap[k]=[];stintMap[k].push(s);});
   Object.values(stintMap).forEach(arr=>arr.sort((a,b)=>(a.lap_start??0)-(b.lap_start??0)));
-
   const totalLaps=Math.max(...stints.map(s=>s.lap_end??0),1);
-
   const times=pits.map(p=>p.pit_duration).filter(Boolean);
   const minP=Math.min(...times),maxP=Math.max(...times);
   const pitCls=d=>!d?'normal':d<=minP*1.06?'fast':d>=maxP*0.9?'slow':'normal';
-
   const pitsByDriver={};
   pits.forEach(p=>{const k=String(p.driver_number);if(!pitsByDriver[k])pitsByDriver[k]=[];pitsByDriver[k].push(p);});
-
-  const driverOrder=[...new Set(pits.map(p=>String(p.driver_number)))]
-    .sort((a,b)=>(pitsByDriver[a][0]?.lap_number??0)-(pitsByDriver[b][0]?.lap_number??0));
-
+  const driverOrder=[...new Set(pits.map(p=>String(p.driver_number)))].sort((a,b)=>(pitsByDriver[a][0]?.lap_number??0)-(pitsByDriver[b][0]?.lap_number??0));
   return (
     <div className="rr4-tbl-wrap">
       <table className="rr4-tbl">
         <thead><tr>
-          <th>นักแข่ง</th>
-          <th>Strategy + Pit</th>
-          <th className="r">Stops</th>
-          <th className="r">เร็วสุด (วิ)</th>
+          <th>นักแข่ง</th><th>Strategy + Pit</th><th className="r">Stops</th><th className="r">เร็วสุด (วิ)</th>
         </tr></thead>
         <tbody>
           {driverOrder.map((num,ri)=>{
@@ -1069,24 +874,15 @@ const PitTable = ({ pits, drivers, stints=[] }) => {
             const driverPits=pitsByDriver[num]??[];
             const ds=stintMap[num]??[];
             const fastestPit=driverPits.reduce((b,p)=>(!b||p.pit_duration<b.pit_duration)?p:b,null);
-
             return (
               <tr key={num} style={{animationDelay:`${ri*0.025}s`}}>
-                <td style={{minWidth:'130px'}}>
-                  <DrvCell
-                    last={d?.last_name??d?.full_name?.split(' ').pop()??`#${num}`}
-                    first={d?.first_name??d?.team_name??''}
-                    color={color} h={32}
-                  />
-                </td>
+                <td style={{minWidth:'130px'}}><DrvCell last={d?.last_name??d?.full_name?.split(' ').pop()??`#${num}`} first={d?.first_name??d?.team_name??''} color={color} h={32}/></td>
                 <td style={{minWidth:'200px',paddingTop:'0.75rem',paddingBottom:'0.75rem'}}>
                   <div style={{position:'relative',height:'28px'}}>
                     {ds.map((stint,si)=>{
                       const t=tyreCol(stint.compound);
-                      const start=(stint.lap_start??1)-1;
-                      const end=stint.lap_end??totalLaps;
-                      const pct=Math.max(((end-start)/totalLaps)*100,3);
-                      const left=(start/totalLaps)*100;
+                      const start=(stint.lap_start??1)-1,end=stint.lap_end??totalLaps;
+                      const pct=Math.max(((end-start)/totalLaps)*100,3),left=(start/totalLaps)*100;
                       const age=stint.tyre_age_at_start??0;
                       const isHov=hovered?.num===num&&hovered?.si===si;
                       return (
@@ -1098,10 +894,7 @@ const PitTable = ({ pits, drivers, stints=[] }) => {
                           {pct>7&&<span style={{fontFamily:"'Russo One',sans-serif",fontSize:'0.52rem',color:t.text,pointerEvents:'none'}}>{t.label}</span>}
                           {isHov&&(
                             <div style={{position:'absolute',bottom:'calc(100% + 6px)',left:'50%',transform:'translateX(-50%)',background:'#1a1a1f',border:'1px solid rgba(255,255,255,0.12)',borderRadius:'4px',padding:'0.4rem 0.65rem',whiteSpace:'nowrap',zIndex:300,pointerEvents:'none',fontFamily:"'DM Mono',monospace",fontSize:'0.72rem',color:'rgba(255,255,255,0.7)',lineHeight:1.6,boxShadow:'0 6px 20px rgba(0,0,0,0.8)'}}>
-                              <div style={{display:'flex',alignItems:'center',gap:'0.4rem',marginBottom:'0.2rem'}}>
-                                <TyreBadge compound={stint.compound} size="sm"/>
-                                <strong style={{color:'#fff'}}>{TYRE_COLORS[stint.compound?.toUpperCase()]?.name??stint.compound}</strong>
-                              </div>
+                              <div style={{display:'flex',alignItems:'center',gap:'0.4rem',marginBottom:'0.2rem'}}><TyreBadge compound={stint.compound} size="sm"/><strong style={{color:'#fff'}}>{TYRE_COLORS[stint.compound?.toUpperCase()]?.name??stint.compound}</strong></div>
                               <div>L{stint.lap_start}–{end} · {end-start} รอบ</div>
                               <div style={{color:age===0?'rgba(100,220,100,0.8)':'rgba(255,200,0,0.7)'}}>{age===0?'ยางใหม่':`ยางเก่า ${age} รอบ`}</div>
                             </div>
@@ -1110,8 +903,7 @@ const PitTable = ({ pits, drivers, stints=[] }) => {
                       );
                     })}
                     {driverPits.map((p,pi)=>{
-                      const left=(p.lap_number/totalLaps)*100;
-                      const cls=pitCls(p.pit_duration);
+                      const left=(p.lap_number/totalLaps)*100,cls=pitCls(p.pit_duration);
                       const markerColor=cls==='fast'?'#00d4aa':cls==='slow'?'#ff8c00':'rgba(255,255,255,0.6)';
                       const isHov=hovered?.num===num&&hovered?.pi===pi;
                       return (
@@ -1121,9 +913,7 @@ const PitTable = ({ pits, drivers, stints=[] }) => {
                           onMouseLeave={()=>setHovered(null)}
                         >
                           <div style={{width:'2px',height:'100%',background:markerColor,borderRadius:'1px',boxShadow:`0 0 4px ${markerColor}`}}/>
-                          <div style={{position:'absolute',top:'-14px',fontFamily:"'DM Mono',monospace",fontSize:'0.55rem',color:markerColor,whiteSpace:'nowrap',fontWeight:700}}>
-                            L{p.lap_number}
-                          </div>
+                          <div style={{position:'absolute',top:'-14px',fontFamily:"'DM Mono',monospace",fontSize:'0.55rem',color:markerColor,whiteSpace:'nowrap',fontWeight:700}}>L{p.lap_number}</div>
                           {isHov&&(
                             <div style={{position:'absolute',bottom:'calc(100% + 8px)',left:'50%',transform:'translateX(-50%)',background:'#1a1a1f',border:`1px solid ${markerColor}66`,borderRadius:'4px',padding:'0.45rem 0.7rem',whiteSpace:'nowrap',zIndex:300,pointerEvents:'none',fontFamily:"'DM Mono',monospace",fontSize:'0.72rem',color:'rgba(255,255,255,0.75)',lineHeight:1.7,boxShadow:'0 6px 20px rgba(0,0,0,0.8)'}}>
                               <div style={{color:'#fff',fontWeight:700,marginBottom:'0.15rem'}}>🔧 Pit Stop #{pi+1}</div>
@@ -1136,9 +926,7 @@ const PitTable = ({ pits, drivers, stints=[] }) => {
                     })}
                   </div>
                 </td>
-                <td style={{textAlign:'right',fontFamily:"'Russo One',sans-serif",fontSize:'1.1rem',color:'rgba(255,255,255,0.4)'}}>
-                  {driverPits.length}
-                </td>
+                <td style={{textAlign:'right',fontFamily:"'Russo One',sans-serif",fontSize:'1.1rem',color:'rgba(255,255,255,0.4)'}}>{driverPits.length}</td>
                 <td className={`rr4-pit-dur ${pitCls(fastestPit?.pit_duration)}`} style={{textAlign:'right'}}>
                   {fastestPit?.pit_duration!=null?fastestPit.pit_duration.toFixed(3):'—'}
                   {pitCls(fastestPit?.pit_duration)==='fast'&&<span className="rr4-pit-lbl" style={{color:'#00d4aa'}}>FAST</span>}
@@ -1152,28 +940,15 @@ const PitTable = ({ pits, drivers, stints=[] }) => {
   );
 };
 
-/* ════════════════════════════════════════
-   GRID VS FINISH — updated component
-   - แสดง delta ทุกคน รวม Lapped + Retired
-════════════════════════════════════════ */
+/* ═══ GRID VS FINISH ═══ */
 const GridVsFinish = ({ raceResults, qualResults }) => {
   if (!raceResults.length) return <div className="rr4-empty">ยังไม่มีข้อมูลผลการแข่งขัน</div>;
   if (!qualResults.length) return <div className="rr4-empty">ยังไม่มีข้อมูล Qualifying สำหรับเปรียบเทียบ</div>;
-
-  // Build grid position map from qualifying
   const gridMap = {};
-  qualResults.forEach(r => {
-    const id = r.Driver?.driverId;
-    if (id) gridMap[id] = parseInt(r.position) || null;
-  });
-
-  // Sorted by race finish
+  qualResults.forEach(r => { const id = r.Driver?.driverId; if (id) gridMap[id] = parseInt(r.position) || null; });
   const sorted = [...raceResults].sort((a, b) => parseInt(a.position) - parseInt(b.position));
-
-  // Compute stats — delta คำนวณทุกคน รวม DNF / Lapped
   let biggestGain = null, biggestLoss = null;
   let gainCount = 0, lossCount = 0, sameCount = 0;
-
   const rows = sorted.map(r => {
     const id = r.Driver?.driverId;
     const grid = r.grid ? parseInt(r.grid) : (gridMap[id] ?? null);
@@ -1181,43 +956,25 @@ const GridVsFinish = ({ raceResults, qualResults }) => {
     const status = r.status ?? '';
     const isDnf = classifyStatus(status) === 'ret';
     const isLapped = classifyStatus(status) === 'lap';
-    // คำนวณ delta สำหรับทุกคน — Retired ก็มี finish position ที่ valid
     const delta = grid != null ? grid - finish : null;
-
     if (delta != null) {
-      if (delta > 0) {
-        gainCount++;
-        if (!biggestGain || delta > biggestGain.delta) biggestGain = { delta, r };
-      } else if (delta < 0) {
-        lossCount++;
-        if (!biggestLoss || delta < biggestLoss.delta) biggestLoss = { delta, r };
-      } else {
-        sameCount++;
-      }
+      if (delta > 0) { gainCount++; if (!biggestGain || delta > biggestGain.delta) biggestGain = { delta, r }; }
+      else if (delta < 0) { lossCount++; if (!biggestLoss || delta < biggestLoss.delta) biggestLoss = { delta, r }; }
+      else { sameCount++; }
     }
-
     return { r, grid, finish, delta, isDnf, isLapped, status };
   });
-
-  // Max delta for bar sizing
   const allDeltas = rows.map(x => Math.abs(x.delta ?? 0)).filter(Boolean);
   const maxDelta = allDeltas.length ? Math.max(...allDeltas) : 1;
-
   const posColor = p => p === 1 ? '#FFD700' : p === 2 ? '#C0C0C0' : p === 3 ? '#CD7F32' : 'rgba(255,255,255,0.55)';
-
   return (
     <>
-      {/* ── Summary header cards ── */}
       <div className="gvf-header-cards">
         <div className="gvf-stat-card" style={{borderTop:'3px solid rgba(0,200,120,0.5)',animationDelay:'0.05s'}}>
           <div className="gvf-stat-label">⬆ ขึ้นอันดับ</div>
           <div className="gvf-stat-val" style={{color:'#00d47a'}}>{gainCount}</div>
           <div className="gvf-stat-sub">นักแข่ง</div>
-          {biggestGain && (
-            <div style={{marginTop:'0.6rem',fontFamily:"'Barlow Condensed',sans-serif",fontSize:'0.82rem',color:'rgba(0,200,120,0.6)'}}>
-              สูงสุด: <strong style={{color:'#00d47a'}}>{biggestGain.r.Driver?.familyName}</strong> +{biggestGain.delta}
-            </div>
-          )}
+          {biggestGain && <div style={{marginTop:'0.6rem',fontFamily:"'Barlow Condensed',sans-serif",fontSize:'0.82rem',color:'rgba(0,200,120,0.6)'}}>สูงสุด: <strong style={{color:'#00d47a'}}>{biggestGain.r.Driver?.familyName}</strong> +{biggestGain.delta}</div>}
         </div>
         <div className="gvf-stat-card" style={{borderTop:'3px solid rgba(255,255,255,0.1)',animationDelay:'0.10s'}}>
           <div className="gvf-stat-label">↔ คงเดิม</div>
@@ -1228,62 +985,33 @@ const GridVsFinish = ({ raceResults, qualResults }) => {
           <div className="gvf-stat-label">⬇ ลงอันดับ</div>
           <div className="gvf-stat-val" style={{color:'#ff6060'}}>{lossCount}</div>
           <div className="gvf-stat-sub">นักแข่ง</div>
-          {biggestLoss && (
-            <div style={{marginTop:'0.6rem',fontFamily:"'Barlow Condensed',sans-serif",fontSize:'0.82rem',color:'rgba(255,100,100,0.6)'}}>
-              มากสุด: <strong style={{color:'#ff6060'}}>{biggestLoss.r.Driver?.familyName}</strong> {biggestLoss.delta}
-            </div>
-          )}
+          {biggestLoss && <div style={{marginTop:'0.6rem',fontFamily:"'Barlow Condensed',sans-serif",fontSize:'0.82rem',color:'rgba(255,100,100,0.6)'}}>มากสุด: <strong style={{color:'#ff6060'}}>{biggestLoss.r.Driver?.familyName}</strong> {biggestLoss.delta}</div>}
         </div>
       </div>
-
-      {/* ── Legend ── */}
       <div className="gvf-legend">
-        <div className="gvf-legend-item">
-          <span style={{width:10,height:10,borderRadius:'50%',background:'#00d47a',display:'inline-block'}}/>
-          ขึ้นอันดับ
-        </div>
-        <div className="gvf-legend-item">
-          <span style={{width:10,height:10,borderRadius:'50%',background:'rgba(255,255,255,0.2)',display:'inline-block'}}/>
-          คงเดิม
-        </div>
-        <div className="gvf-legend-item">
-          <span style={{width:10,height:10,borderRadius:'50%',background:'#ff6060',display:'inline-block'}}/>
-          ลงอันดับ
-        </div>
+        {[['#00d47a','ขึ้นอันดับ'],['rgba(255,255,255,0.2)','คงเดิม'],['#ff6060','ลงอันดับ']].map(([c,l])=>(
+          <div key={l} className="gvf-legend-item"><span style={{width:10,height:10,borderRadius:'50%',background:c,display:'inline-block'}}/>{l}</div>
+        ))}
         <div className="gvf-legend-item" style={{marginLeft:'auto'}}>
-          <span className="rr4-status-badge ret" style={{fontSize:'0.62rem'}}>Retired</span>
-          &nbsp;/&nbsp;
-          <span className="rr4-status-badge lap" style={{fontSize:'0.62rem'}}>Lapped</span>
-          &nbsp;แสดง delta ตามจริง
+          <span className="rr4-status-badge ret" style={{fontSize:'0.62rem'}}>Retired</span>&nbsp;/&nbsp;<span className="rr4-status-badge lap" style={{fontSize:'0.62rem'}}>Lapped</span>&nbsp;แสดง delta ตามจริง
         </div>
       </div>
-
-      {/* ── Note ── */}
       <div className="gvf-note">
         <span>📊</span>
         <div>
           <strong>Grid vs Finish Position</strong>
-          เปรียบเทียบตำแหน่ง Start (Grid) จาก Qualifying กับตำแหน่งจบการแข่งขัน (Finish) — รวมนักแข่งที่ Lapped และ Retired ด้วย
-          <span style={{display:'block',fontSize:'0.75rem',marginTop:'0.2rem',color:'rgba(255,255,255,0.2)'}}>
-            * Grid position ดึงจาก Jolpica Ergast · Retired/Lapped ยังมี finish position ที่ใช้คำนวณ delta ได้
-          </span>
+          เปรียบเทียบตำแหน่ง Start (Grid) กับตำแหน่งจบการแข่งขัน — รวมนักแข่งที่ Lapped และ Retired ด้วย
         </div>
       </div>
-
-      {/* ── Main table ── */}
       <div className="rr4-tbl-wrap">
         <table className="rr4-tbl" style={{minWidth:'580px'}}>
-          <thead>
-            <tr>
-              <th className="c" style={{width:'52px'}}>จบ</th>
-              <th>นักแข่ง</th>
-              <th>ทีม</th>
-              <th className="c" style={{width:'60px'}}>Grid</th>
-              <th className="c" style={{minWidth:'160px'}}>การเปลี่ยนแปลง</th>
-              <th className="c" style={{width:'110px'}}>+/− / สถานะ</th>
-              <th className="r" style={{width:'80px'}}>คะแนน</th>
-            </tr>
-          </thead>
+          <thead><tr>
+            <th className="c" style={{width:'52px'}}>จบ</th><th>นักแข่ง</th><th>ทีม</th>
+            <th className="c" style={{width:'60px'}}>Grid</th>
+            <th className="c" style={{minWidth:'160px'}}>การเปลี่ยนแปลง</th>
+            <th className="c" style={{width:'110px'}}>+/− / สถานะ</th>
+            <th className="r" style={{width:'80px'}}>คะแนน</th>
+          </tr></thead>
           <tbody>
             {rows.map(({ r, grid, finish, delta, isDnf, isLapped, status }, i) => {
               const color = teamColor(r.Constructor?.name);
@@ -1291,116 +1019,50 @@ const GridVsFinish = ({ raceResults, qualResults }) => {
               const barPct = delta != null ? Math.abs(delta) / maxDelta * 100 : 0;
               const barColor = type === 'gain' ? '#00d47a' : type === 'loss' ? '#ff6060' : 'rgba(255,255,255,0.15)';
               const showStatus = isDnf || isLapped;
-
               return (
-                <tr key={i}
-                  className={isDnf ? 'gvf-row-dnf' : ''}
-                  style={{animationDelay:`${i * 0.025}s`}}
-                >
-                  {/* Finish position */}
-                  <td className={`rr4-pos ${posClass(String(finish))}`}>
-                    {finish}
-                  </td>
-
-                  {/* Driver */}
-                  <td>
-                    <DrvCell
-                      last={r.Driver?.familyName}
-                      first={r.Driver?.givenName}
-                      num={r.number}
-                      color={color}
-                    />
-                  </td>
-
-                  {/* Team */}
+                <tr key={i} className={isDnf ? 'gvf-row-dnf' : ''} style={{animationDelay:`${i * 0.025}s`}}>
+                  <td className={`rr4-pos ${posClass(String(finish))}`}>{finish}</td>
+                  <td><DrvCell last={r.Driver?.familyName} first={r.Driver?.givenName} num={r.number} color={color}/></td>
                   <td className="rr4-team-td">{r.Constructor?.name}</td>
-
-                  {/* Grid position */}
                   <td style={{textAlign:'center'}}>
-                    <span style={{
-                      fontFamily:"'Russo One',sans-serif",
-                      fontSize: grid === 1 ? '1.35rem' : '1.1rem',
-                      color: grid != null ? posColor(grid) : 'rgba(255,255,255,0.15)',
-                    }}>
-                      {grid ?? '—'}
-                    </span>
+                    <span style={{fontFamily:"'Russo One',sans-serif",fontSize:grid===1?'1.35rem':'1.1rem',color:grid!=null?posColor(grid):'rgba(255,255,255,0.15)'}}>{grid??'—'}</span>
                   </td>
-
-                  {/* Visual flow bar */}
                   <td style={{padding:'0.8rem 0.6rem'}}>
                     {delta != null ? (
                       <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
-                        {/* Grid marker */}
-                        <span style={{fontFamily:"'DM Mono',monospace",fontSize:'0.72rem',color:'rgba(255,255,255,0.25)',minWidth:'20px',textAlign:'right'}}>
-                          {grid}
-                        </span>
-                        {/* bar */}
+                        <span style={{fontFamily:"'DM Mono',monospace",fontSize:'0.72rem',color:'rgba(255,255,255,0.25)',minWidth:'20px',textAlign:'right'}}>{grid}</span>
                         <div style={{flex:1,position:'relative',height:'8px',background:'rgba(255,255,255,0.04)',borderRadius:'4px',overflow:'hidden',minWidth:'80px'}}>
-                          {type === 'gain' && (
-                            <div style={{
-                              position:'absolute',right:0,top:0,height:'100%',
-                              width:`${barPct}%`,background:barColor,borderRadius:'4px',
-                              boxShadow:`0 0 8px ${barColor}66`,
-                            }}/>
-                          )}
-                          {type === 'loss' && (
-                            <div style={{
-                              position:'absolute',left:0,top:0,height:'100%',
-                              width:`${barPct}%`,background:barColor,borderRadius:'4px',
-                              boxShadow:`0 0 8px ${barColor}44`,
-                            }}/>
-                          )}
-                          {type === 'same' && (
-                            <div style={{position:'absolute',inset:0,background:'rgba(255,255,255,0.06)',borderRadius:'4px'}}/>
-                          )}
+                          {type === 'gain' && <div style={{position:'absolute',right:0,top:0,height:'100%',width:`${barPct}%`,background:barColor,borderRadius:'4px',boxShadow:`0 0 8px ${barColor}66`}}/>}
+                          {type === 'loss' && <div style={{position:'absolute',left:0,top:0,height:'100%',width:`${barPct}%`,background:barColor,borderRadius:'4px',boxShadow:`0 0 8px ${barColor}44`}}/>}
+                          {type === 'same' && <div style={{position:'absolute',inset:0,background:'rgba(255,255,255,0.06)',borderRadius:'4px'}}/>}
                         </div>
-                        {/* Finish marker */}
-                        <span style={{fontFamily:"'DM Mono',monospace",fontSize:'0.72rem',color:'rgba(255,255,255,0.25)',minWidth:'20px'}}>
-                          {finish}
-                        </span>
+                        <span style={{fontFamily:"'DM Mono',monospace",fontSize:'0.72rem',color:'rgba(255,255,255,0.25)',minWidth:'20px'}}>{finish}</span>
                       </div>
-                    ) : (
-                      <span style={{color:'rgba(255,255,255,0.1)',fontSize:'0.72rem',fontFamily:'DM Mono'}}>—</span>
-                    )}
+                    ) : <span style={{color:'rgba(255,255,255,0.1)',fontSize:'0.72rem',fontFamily:'DM Mono'}}>—</span>}
                   </td>
-
-                  {/* Delta badge + status badge */}
                   <td style={{textAlign:'center',padding:'0.8rem 0.5rem'}}>
                     {delta == null ? (
                       <span style={{color:'rgba(255,255,255,0.12)',fontFamily:'DM Mono',fontSize:'0.72rem'}}>—</span>
                     ) : (
                       <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'4px'}}>
-                        {/* Delta badge — แสดงทุกคนรวม DNF/Lapped */}
                         <span className={`gvf-delta-badge ${type}`}>
-                          {type === 'gain' && <TrendingUp size={13}/>}
-                          {type === 'loss' && <TrendingDown size={13}/>}
-                          {type === 'same' && <Minus size={13}/>}
-                          {type === 'gain' ? `+${delta}` : type === 'loss' ? `${delta}` : '='}
+                          {type==='gain'&&<TrendingUp size={13}/>}{type==='loss'&&<TrendingDown size={13}/>}{type==='same'&&<Minus size={13}/>}
+                          {type==='gain'?`+${delta}`:type==='loss'?`${delta}`:'='}
                         </span>
-                        {/* Status badge ถ้า Retired หรือ Lapped */}
                         {showStatus && <StatusBadge status={status}/>}
                       </div>
                     )}
                   </td>
-
-                  {/* Points */}
-                  <td className={`rr4-pts-td ${r.points === '0' ? 'zero' : ''}`}>
-                    {r.points !== '0' ? r.points : '—'}
-                  </td>
+                  <td className={`rr4-pts-td ${r.points==='0'?'zero':''}`}>{r.points!=='0'?r.points:'—'}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
-
-      {/* ── Biggest movers highlight ── */}
       {(biggestGain || biggestLoss) && (
         <div style={{marginTop:'2.5rem'}}>
-          <div className="rr4-sec-hd">
-            <span className="rr4-sec-title">Biggest Movers</span>
-            <div className="rr4-sec-line"/>
-          </div>
+          <div className="rr4-sec-hd"><span className="rr4-sec-title">Biggest Movers</span><div className="rr4-sec-line"/></div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'2px'}}>
             {biggestGain && (
               <div style={{background:'#111115',border:'1px solid rgba(0,200,120,0.15)',borderTop:'3px solid #00d47a',padding:'1.25rem 1.5rem',animation:'rr4-rise 0.5s ease both',animationDelay:'0.1s'}}>
@@ -1408,7 +1070,7 @@ const GridVsFinish = ({ raceResults, qualResults }) => {
                 <div style={{fontFamily:"'Russo One',sans-serif",fontSize:'1.4rem',color:'#fff',textTransform:'uppercase',marginBottom:'0.2rem'}}>{biggestGain.r.Driver?.familyName}</div>
                 <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:'0.9rem',color:'rgba(255,255,255,0.3)',marginBottom:'0.8rem'}}>{biggestGain.r.Constructor?.name}</div>
                 <div style={{display:'flex',alignItems:'center',gap:'0.75rem'}}>
-                  <span style={{fontFamily:"'DM Mono',monospace",fontSize:'0.88rem',color:'rgba(255,255,255,0.3)'}}>P{biggestGain.r.grid ?? '?'}</span>
+                  <span style={{fontFamily:"'DM Mono',monospace",fontSize:'0.88rem',color:'rgba(255,255,255,0.3)'}}>P{biggestGain.r.grid??'?'}</span>
                   <TrendingUp size={18} color="#00d47a"/>
                   <span style={{fontFamily:"'Russo One',sans-serif",fontSize:'1.8rem',color:'#00d47a'}}>+{biggestGain.delta}</span>
                   <span style={{fontFamily:"'DM Mono',monospace",fontSize:'0.88rem',color:'rgba(255,255,255,0.3)'}}>P{biggestGain.r.position}</span>
@@ -1421,7 +1083,7 @@ const GridVsFinish = ({ raceResults, qualResults }) => {
                 <div style={{fontFamily:"'Russo One',sans-serif",fontSize:'1.4rem',color:'#fff',textTransform:'uppercase',marginBottom:'0.2rem'}}>{biggestLoss.r.Driver?.familyName}</div>
                 <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:'0.9rem',color:'rgba(255,255,255,0.3)',marginBottom:'0.8rem'}}>{biggestLoss.r.Constructor?.name}</div>
                 <div style={{display:'flex',alignItems:'center',gap:'0.75rem'}}>
-                  <span style={{fontFamily:"'DM Mono',monospace",fontSize:'0.88rem',color:'rgba(255,255,255,0.3)'}}>P{biggestLoss.r.grid ?? '?'}</span>
+                  <span style={{fontFamily:"'DM Mono',monospace",fontSize:'0.88rem',color:'rgba(255,255,255,0.3)'}}>P{biggestLoss.r.grid??'?'}</span>
                   <TrendingDown size={18} color="#ff6060"/>
                   <span style={{fontFamily:"'Russo One',sans-serif",fontSize:'1.8rem',color:'#ff6060'}}>{biggestLoss.delta}</span>
                   <span style={{fontFamily:"'DM Mono',monospace",fontSize:'0.88rem',color:'rgba(255,255,255,0.3)'}}>P{biggestLoss.r.position}</span>
@@ -1436,24 +1098,49 @@ const GridVsFinish = ({ raceResults, qualResults }) => {
 };
 
 /* ═══════════════════════════════════════════════════════════════════
-   MAIN RaceResult
+   MAIN RaceResult  ← แก้ 3 จุด: useParams, useNavigate, fetch race data
 ═══════════════════════════════════════════════════════════════════ */
-const RaceResult = ({ race, season=2025, onBack }) => {
+const RaceResult = () => {
+  // ── 1. อ่าน season/round จาก URL แทน props ──
+  const { season: seasonParam, slug } = useParams();
+  
+  const navigate = useNavigate();
+  const season = parseInt(seasonParam) || 2026;
+// const round = parseInt(roundParam) || null;
+
+  // ── 2. โหลดข้อมูล race จาก schedule เพื่อเอา raceName/Circuit ──
+  const [race, setRace] = useState(null);
+
+  // useEffect(() => {
+  //   jolpicaApi.getSchedule(season).then(schedule => {
+  //     const found = schedule.find(r => String(r.round) === String(round));
+  //     setRace(found ?? null);
+  //   });
+  // }, [season, round]);
+
+  useEffect(() => {
+  const found = getRaceBySlug(slug);
+  setRace(found ?? null);
+}, [slug]);
+
+  // ── 3. onBack ใช้ navigate แทน prop ──
+  const handleBack = () => navigate('/results');
+
   const [tab,setTab]               = useState('race');
   const [initLoading,setInit]      = useState(true);
   const [tabLoading,setTabLoading] = useState(false);
   const [warn,setWarn]             = useState(null);
 
-  const [raceRes,   setRaceRes]   = useState([]);
-  const [qualRes,   setQualRes]   = useState([]);
-  const [sprintRes, setSprintRes] = useState([]);
-
-  const [raceLaps,   setRaceLaps]   = useState([]);
-  const [racePits,   setRacePits]   = useState([]);
-  const [sprintLaps, setSprintLaps] = useState([]);
-  const [fp1Laps,    setFp1Laps]    = useState([]);
-  const [fp2Laps,    setFp2Laps]    = useState([]);
-  const [fp3Laps,    setFp3Laps]    = useState([]);
+  const [raceRes,       setRaceRes]       = useState([]);
+  const [qualRes,       setQualRes]       = useState([]);
+  const [sprintRes,     setSprintRes]     = useState([]);
+  const [sprintQualRes, setSprintQualRes] = useState([]);
+  const [raceLaps,      setRaceLaps]      = useState([]);
+  const [racePits,      setRacePits]      = useState([]);
+  const [sprintLaps,    setSprintLaps]    = useState([]);
+  const [fp1Laps,       setFp1Laps]       = useState([]);
+  const [fp2Laps,       setFp2Laps]       = useState([]);
+  const [fp3Laps,       setFp3Laps]       = useState([]);
 
   const [raceStints,    setRaceStints]    = useState([]);
   const [qualStints,    setQualStints]    = useState([]);
@@ -1463,18 +1150,17 @@ const RaceResult = ({ race, season=2025, onBack }) => {
   const [fp2Stints,     setFp2Stints]     = useState([]);
   const [fp3Stints,     setFp3Stints]     = useState([]);
 
-  const [drivers,     setDrivers]     = useState({});
+  const [drivers,    setDrivers]    = useState({});
   const driversRef  = useRef({});
-
   const fetched     = useRef(new Set());
   const sessionsRef = useRef(null);
   const skeyRef     = useRef({});
 
   const isSprint = !!(race?.Sprint);
-  const round    = race?.round;
 
   useEffect(()=>{
-    if(!round) return;
+    if(!race) return;
+  const round = race.round;
     fetched.current.clear();
     sessionsRef.current=null;
     skeyRef.current={};
@@ -1486,6 +1172,7 @@ const RaceResult = ({ race, season=2025, onBack }) => {
     setFp1Stints([]); setFp2Stints([]); setFp3Stints([]);
     setDrivers({});
 
+    const raceDate = race?.date ? new Date(race.date) : new Date();
     const jolFetches=[
       jolGet(`/${season}/${round}/results.json?limit=30`).then(d=>setRaceRes(d?.MRData?.RaceTable?.Races?.[0]?.Results??[])),
       jolGet(`/${season}/${round}/qualifying.json?limit=30`).then(d=>setQualRes(d?.MRData?.RaceTable?.Races?.[0]?.QualifyingResults??[])),
@@ -1495,14 +1182,12 @@ const RaceResult = ({ race, season=2025, onBack }) => {
     const of1Eager=of1Get(`/sessions?year=${season}`)
       .then(async all=>{
         if(!Array.isArray(all)) return;
-        const raceTs=new Date(race.date).getTime();
+        const raceTs=raceDate.getTime();
         const weekend=all.filter(s=>Math.abs(new Date(s.date_start).getTime()-raceTs)<5*86400000);
         sessionsRef.current=weekend;
         weekend.forEach(s=>{skeyRef.current[s.session_name?.toLowerCase()]=s.session_key;});
-
         const raceKey=weekend.find(s=>s.session_name?.toLowerCase()==='race')?.session_key??null;
         if(!raceKey) return;
-
         const drvData=await of1Get(`/drivers?session_key=${raceKey}`);
         if(Array.isArray(drvData)){
           driversRef.current={...driversRef.current,[raceKey]:drvData};
@@ -1514,7 +1199,7 @@ const RaceResult = ({ race, season=2025, onBack }) => {
 
     Promise.allSettled([...jolFetches.map(p=>p.catch(()=>{})), of1Eager])
       .finally(()=>setInit(false));
-  },[season,round,isSprint]);
+  },[season, race]);
 
   useEffect(()=>{
     if(!initLoading && tab==='race') loadTab('race');
@@ -1524,7 +1209,7 @@ const RaceResult = ({ race, season=2025, onBack }) => {
     if(sessionsRef.current) return sessionsRef.current;
     const all=await of1Get(`/sessions?year=${season}`);
     if(!Array.isArray(all)){sessionsRef.current=[];return [];}
-    const raceTs=new Date(race.date).getTime();
+    const raceTs=new Date(race?.date??Date.now()).getTime();
     sessionsRef.current=all.filter(s=>Math.abs(new Date(s.date_start).getTime()-raceTs)<5*86400000);
     sessionsRef.current.forEach(s=>{skeyRef.current[s.session_name?.toLowerCase()]=s.session_key;});
     return sessionsRef.current;
@@ -1539,7 +1224,6 @@ const RaceResult = ({ race, season=2025, onBack }) => {
     try{
       const sessions=await ensureSessions();
       if(!sessions.length){setWarn('ไม่พบ session ใน OpenF1');fetched.current.add(newTab);return;}
-
       const fetchForSession=async(sessionName,fetchFn)=>{
         const key=getKey(sessions,sessionName);
         if(!key) return;
@@ -1547,80 +1231,38 @@ const RaceResult = ({ race, season=2025, onBack }) => {
         const promises=[fetchFn(key)];
         if(needDrivers) promises.push(
           of1Get(`/drivers?session_key=${key}`).then(d=>{
-            if(Array.isArray(d)){
-              driversRef.current={...driversRef.current,[key]:d};
-              setDrivers({...driversRef.current});
-            }
+            if(Array.isArray(d)){driversRef.current={...driversRef.current,[key]:d};setDrivers({...driversRef.current});}
           })
         );
         await Promise.all(promises);
       };
-
       if(newTab==='race'){
-        await fetchForSession(OF1_SESSION.race, async key=>{
-          const st=await of1Get(`/stints?session_key=${key}`);
-          setRaceStints(Array.isArray(st)?st:[]);
-        });
+        await fetchForSession(OF1_SESSION.race, async key=>{const st=await of1Get(`/stints?session_key=${key}`);setRaceStints(Array.isArray(st)?st:[]);});
       }else if(newTab==='laps'){
-        await fetchForSession(OF1_SESSION.race, async key=>{
-          const d=await of1Get(`/laps?session_key=${key}`);
-          setRaceLaps(Array.isArray(d)?d:[]);
-        });
+        await fetchForSession(OF1_SESSION.race, async key=>{const d=await of1Get(`/laps?session_key=${key}`);setRaceLaps(Array.isArray(d)?d:[]);});
       }else if(newTab==='pits'){
         await fetchForSession(OF1_SESSION.race, async key=>{
-          const[ps,st]=await Promise.all([
-            of1Get(`/pit?session_key=${key}`),
-            fetched.current.has('race')?Promise.resolve(null):of1Get(`/stints?session_key=${key}`),
-          ]);
+          const[ps,st]=await Promise.all([of1Get(`/pit?session_key=${key}`),fetched.current.has('race')?Promise.resolve(null):of1Get(`/stints?session_key=${key}`)]);
           setRacePits(Array.isArray(ps)?ps:[]);
           if(st!==null&&Array.isArray(st)){setRaceStints(st);fetched.current.add('race');}
         });
       }else if(newTab==='qual'){
-        await fetchForSession(OF1_SESSION.qual, async key=>{
-          const st=await of1Get(`/stints?session_key=${key}`);
-          setQualStints(Array.isArray(st)?st:[]);
-        });
+        await fetchForSession(OF1_SESSION.qual, async key=>{const st=await of1Get(`/stints?session_key=${key}`);setQualStints(Array.isArray(st)?st:[]);});
       }else if(newTab==='fp1'){
-        await fetchForSession(OF1_SESSION.fp1, async key=>{
-          const[l,st]=await Promise.all([of1Get(`/laps?session_key=${key}`),of1Get(`/stints?session_key=${key}`)]);
-          setFp1Laps(Array.isArray(l)?l:[]);
-          setFp1Stints(Array.isArray(st)?st:[]);
-        });
+        await fetchForSession(OF1_SESSION.fp1, async key=>{const[l,st]=await Promise.all([of1Get(`/laps?session_key=${key}`),of1Get(`/stints?session_key=${key}`)]);setFp1Laps(Array.isArray(l)?l:[]);setFp1Stints(Array.isArray(st)?st:[]);});
       }else if(newTab==='fp2'){
-        await fetchForSession(OF1_SESSION.fp2, async key=>{
-          const[l,st]=await Promise.all([of1Get(`/laps?session_key=${key}`),of1Get(`/stints?session_key=${key}`)]);
-          setFp2Laps(Array.isArray(l)?l:[]);
-          setFp2Stints(Array.isArray(st)?st:[]);
-        });
+        await fetchForSession(OF1_SESSION.fp2, async key=>{const[l,st]=await Promise.all([of1Get(`/laps?session_key=${key}`),of1Get(`/stints?session_key=${key}`)]);setFp2Laps(Array.isArray(l)?l:[]);setFp2Stints(Array.isArray(st)?st:[]);});
       }else if(newTab==='fp3'){
-        await fetchForSession(OF1_SESSION.fp3, async key=>{
-          const[l,st]=await Promise.all([of1Get(`/laps?session_key=${key}`),of1Get(`/stints?session_key=${key}`)]);
-          setFp3Laps(Array.isArray(l)?l:[]);
-          setFp3Stints(Array.isArray(st)?st:[]);
-        });
+        await fetchForSession(OF1_SESSION.fp3, async key=>{const[l,st]=await Promise.all([of1Get(`/laps?session_key=${key}`),of1Get(`/stints?session_key=${key}`)]);setFp3Laps(Array.isArray(l)?l:[]);setFp3Stints(Array.isArray(st)?st:[]);});
       }else if(newTab==='sprint_laps'){
-        await fetchForSession(OF1_SESSION.sprint, async key=>{
-          const[l,st]=await Promise.all([of1Get(`/laps?session_key=${key}`),of1Get(`/stints?session_key=${key}`)]);
-          setSprintLaps(Array.isArray(l)?l:[]);
-          setSprintStints(Array.isArray(st)?st:[]);
-          fetched.current.add('sprint_tyres');
-        });
+        await fetchForSession(OF1_SESSION.sprint, async key=>{const[l,st]=await Promise.all([of1Get(`/laps?session_key=${key}`),of1Get(`/stints?session_key=${key}`)]);setSprintLaps(Array.isArray(l)?l:[]);setSprintStints(Array.isArray(st)?st:[]);fetched.current.add('sprint_tyres');});
       }else if(newTab==='sprint_tyres'){
         if(!fetched.current.has('sprint_tyres')){
-          await fetchForSession(OF1_SESSION.sprint, async key=>{
-            const[l,st]=await Promise.all([of1Get(`/laps?session_key=${key}`),of1Get(`/stints?session_key=${key}`)]);
-            setSprintLaps(Array.isArray(l)?l:[]);
-            setSprintStints(Array.isArray(st)?st:[]);
-            fetched.current.add('sprint_laps');
-          });
+          await fetchForSession(OF1_SESSION.sprint, async key=>{const[l,st]=await Promise.all([of1Get(`/laps?session_key=${key}`),of1Get(`/stints?session_key=${key}`)]);setSprintLaps(Array.isArray(l)?l:[]);setSprintStints(Array.isArray(st)?st:[]);fetched.current.add('sprint_laps');});
         }
       }else if(newTab==='sprint_q_tyres'){
-        await fetchForSession(OF1_SESSION.sprint_q, async key=>{
-          const st=await of1Get(`/stints?session_key=${key}`);
-          setSprintQStints(Array.isArray(st)?st:[]);
-        });
+        await fetchForSession(OF1_SESSION.sprint_q, async key=>{const st=await of1Get(`/stints?session_key=${key}`);setSprintQStints(Array.isArray(st)?st:[]);});
       }
-
       fetched.current.add(newTab);
     }catch{setWarn('ดึงข้อมูลจาก OpenF1 ไม่สำเร็จ');}
     finally{setTabLoading(false);}
@@ -1652,10 +1294,9 @@ const RaceResult = ({ race, season=2025, onBack }) => {
       {key:'grid', label:'📈 Grid vs Finish', cls:'grid-tab'},
       ...(isSprint?[{key:'sprint_laps',label:'🏃 Sprint Laps',cls:'sprint-tab'},{key:'sprint_tyres',label:'🏃 Sprint Tyres',cls:'sprint-tab'},{key:'sprint_q_tyres',label:'⚡ SQ Tyres',cls:'sprint-tab'}]:[]),
     ]},
-    {label:'🧪  Practice · OpenF1',tabs:[
-      {key:'fp1',label:'FP 1',cls:'practice-tab'},
-      {key:'fp2',label:'FP 2',cls:'practice-tab'},
-      ...(!isSprint?[{key:'fp3',label:'FP 3',cls:'practice-tab'}]:[]),
+    {label:'🧪  Practice · OpenF1', tabs:[
+      {key:'fp1', label:'FP 1', cls:'practice-tab'},
+      ...(!isSprint ? [{key:'fp2', label:'FP 2', cls:'practice-tab'},{key:'fp3', label:'FP 3', cls:'practice-tab'}] : []),
     ]},
   ];
 
@@ -1668,8 +1309,31 @@ const RaceResult = ({ race, season=2025, onBack }) => {
 
   const countBadge={laps:raceLaps.length,pits:racePits.length,sprint_laps:sprintLaps.length,sprint_tyres:sprintStints.length,sprint_q_tyres:sprintQStints.length,fp1:fp1Laps.length,fp2:fp2Laps.length,fp3:fp3Laps.length};
   const nameShort=(race?.raceName??'').replace('Grand Prix','').trim();
-  const circuit=race?.Circuit?.circuitName??'';
-  const loc=[race?.Circuit?.Location?.locality,race?.Circuit?.Location?.country].filter(Boolean).join(', ');
+  // const circuit=race?.Circuit?.circuitName??'';
+  // const loc=[race?.Circuit?.Location?.locality,race?.Circuit?.Location?.country].filter(Boolean).join(', ');
+
+  const circuit = race?.Circuit?.circuitName ?? race?.circuit ?? '';
+const loc = [
+  race?.Circuit?.Location?.locality ?? race?.locality,
+  race?.Circuit?.Location?.country  ?? race?.country,
+].filter(Boolean).join(', ');
+
+  // รอ race data โหลดก่อน
+  if (!race) {
+    return (
+      <div className="rr4">
+        <style>{CSS}</style>
+        <div className="rr4-shell">
+          <div className="rr4-inner">
+            <div className="rr4-loading-main">
+              <div className="rr4-load-track"><div className="rr4-load-bar"/></div>
+              <p className="rr4-load-txt">loading race info...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rr4">
@@ -1677,10 +1341,11 @@ const RaceResult = ({ race, season=2025, onBack }) => {
       <div className="rr4-shell">
         <div className="rr4-noise"/><div className="rr4-scan"/><div className="rr4-glow"/>
         <div className="rr4-inner">
-          <button className="rr4-back" onClick={onBack}><ChevronLeft size={14}/> ตารางแข่ง</button>
+          {/* ── ปุ่มกลับใช้ handleBack แทน onBack prop ── */}
+          <button className="rr4-back" onClick={handleBack}><ChevronLeft size={14}/> ตารางแข่ง</button>
 
           <div className="rr4-hero">
-            <div className="rr4-round-tag">Round {round} · {season}</div>
+            <div className="rr4-round-tag">Round {race.round} · {season}</div>
             <h1 className="rr4-hero-name"><em>{nameShort}</em><br/>Grand Prix</h1>
             <div className="rr4-hero-sub">{circuit}</div>
             <div className="rr4-hero-meta">
@@ -1731,7 +1396,7 @@ const RaceResult = ({ race, season=2025, onBack }) => {
                   {tab==='race'           && <RaceTable results={raceRes} showPts={true} stints={raceStints}/>}
                   {tab==='qual'           && <QualTable results={qualRes} allDrivers={raceRes} stints={qualStints}/>}
                   {tab==='sprint'         && <RaceTable results={sprintRes} showPts={true} stints={sprintStints}/>}
-                  {tab==='sprint_q'       && <QualTable results={qualRes} allDrivers={raceRes} label="Sprint Qualifying" stints={sprintQStints}/>}
+                  {tab==='sprint_q'       && <QualTable results={sprintQualRes} allDrivers={raceRes} label="Sprint Qualifying" stints={sprintQStints}/>}
                   {tab==='laps'           && <LapTable laps={raceLaps} drivers={getTabDrivers('race')}/>}
                   {tab==='pits'           && <PitTable pits={racePits} drivers={getTabDrivers('race')} stints={raceStints}/>}
                   {tab==='grid'           && <GridVsFinish raceResults={raceRes} qualResults={qualRes}/>}
