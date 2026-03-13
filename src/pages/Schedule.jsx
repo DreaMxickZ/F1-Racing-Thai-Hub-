@@ -390,8 +390,16 @@ const toSlug = (raceName) =>
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-]/g, '');
 
-// ── ปุ่มจะแสดงเมื่อเวลา FP1 ของสนามนั้น + 1 ชั่วโมงผ่านไปแล้ว ──────────────
+// ── badge "จบแล้ว" : Race + 2 ชั่วโมง ──────────────────────────────────────
 const isPast = (race) => {
+  if (!race?.date) return false;
+  const raceDate = new Date(race.date + 'T' + (race.time || '00:00:00'));
+  raceDate.setHours(raceDate.getHours() + 2);
+  return new Date() > raceDate;
+};
+
+// ── ปุ่ม "ดูผลการแข่งขัน" : FP1 + 1 ชั่วโมง ────────────────────────────────
+const hasResultBtn = (race) => {
   const fp1 = race?.FirstPractice;
   if (!fp1?.date) return false;
   const fp1Date = new Date(fp1.date + 'T' + (fp1.time || '00:00:00'));
@@ -483,8 +491,9 @@ const Schedule = () => {
             {/* Race List */}
             <div className="sp-list">
               {schedule.map((race, index) => {
-                const past     = isPast(race);
-                const next     = isNext(schedule, index);
+                const past       = isPast(race);
+                const showBtn    = hasResultBtn(race);
+                const next       = isNext(schedule, index);
                 const isSprint = !!(race.Sprint);
                 const raceSession = fmtSession({ date: race.date, time: race.time });
                 const sessions = buildSessions(race);
@@ -558,7 +567,8 @@ const Schedule = () => {
                             </a>
                           )}
 
-                          {past && (
+                          {/* ปุ่ม "ดูผลการแข่งขัน" → FP1 + 1 ชั่วโมง */}
+                          {showBtn && (
                             <button
                               className="sp-result-btn"
                               onClick={() => navigate(`/results/2026/${toSlug(race.raceName)}`)}
