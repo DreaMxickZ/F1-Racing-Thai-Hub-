@@ -37,7 +37,6 @@ const CSS = `
 .rr4-tab-dot { width:5px;height:5px;border-radius:50%;background:rgba(0,210,120,0.7);flex-shrink:0; }
 .rr4-tab.active .rr4-tab-dot { background:rgba(255,255,255,0.6); }
 
-/* ── API Disclaimer Banner ── */
 .rr4-api-disclaimer {
   display:flex;align-items:flex-start;gap:0.65rem;
   background:rgba(255,255,255,0.03);
@@ -153,17 +152,11 @@ const CSS = `
 .rr4-empty{text-align:center;padding:4rem 2rem;font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.15);}
 .rr4-warn{display:flex;align-items:flex-start;gap:0.75rem;background:rgba(255,140,0,0.07);border:1px solid rgba(255,140,0,0.2);border-radius:3px;padding:0.9rem 1.1rem;margin-bottom:1.5rem;font-size:0.88rem;color:rgba(255,255,255,0.4);line-height:1.6;}
 .rr4-warn strong{color:rgba(255,200,0,0.8);display:block;margin-bottom:0.1rem;}
-
-/* ── AVG lap time cell ── */
 .rr4-avg-td{font-family:'DM Mono',monospace;font-size:0.9rem;font-weight:500;text-align:right;white-space:nowrap;color:rgba(255,255,255,0.38);}
 .rr4-avg-td.best-avg{color:rgba(100,210,255,0.8);}
 .rr4-avg-bar{display:flex;align-items:center;gap:0.75rem;background:rgba(80,180,255,0.05);border:1px solid rgba(80,180,255,0.12);border-radius:3px;padding:0.6rem 1rem;margin-bottom:1rem;font-family:'DM Mono',monospace;font-size:0.82rem;color:rgba(255,255,255,0.3);}
 .rr4-avg-bar strong{color:rgba(100,210,255,0.75);font-size:0.88rem;}
 .rr4-avg-label{font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.18);}
-
-/* ══════════════════════════════════════
-   GRID VS FINISH
-══════════════════════════════════════ */
 .gvf-header-cards { display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-bottom:2rem; }
 .gvf-stat-card { background:#111115;border:1px solid rgba(255,255,255,0.06);padding:1.25rem 1.5rem;animation:rr4-rise 0.4s ease both; }
 .gvf-stat-label { font-family:'Barlow Condensed',sans-serif;font-size:0.72rem;font-weight:800;letter-spacing:0.22em;text-transform:uppercase;color:rgba(255,255,255,0.22);margin-bottom:0.4rem; }
@@ -179,7 +172,6 @@ const CSS = `
 .gvf-legend-item { display:flex;align-items:center;gap:0.45rem;font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.35); }
 .gvf-row-dnf { opacity:0.55; }
 .gvf-row-dnf:hover { opacity:0.80 !important; }
-
 @keyframes rr4-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes rr4-slide{0%{transform:translateX(-100%)}100%{transform:translateX(400%)}}
 @media(max-width:680px){
@@ -212,9 +204,9 @@ const tyreCol = c => TYRE_COLORS[c?.toUpperCase()] ?? TYRE_COLORS.UNKNOWN;
 
 const OF1_SESSION = {
   fp1:'Practice 1', fp2:'Practice 2', fp3:'Practice 3',
-  qual:'Qualifying', sprint_q:'Sprint Shootout', sprint:'Sprint', race:'Race',
+  qual:'Qualifying', sprint_q:'Sprint Qualifying', sprint:'Sprint', race:'Race',
 };
-const OF1_TABS = new Set(['race','fp1','fp2','fp3','qual','laps','pits','grid','sprint_laps','sprint_tyres','sprint_q_tyres']);
+const OF1_TABS = new Set(['race','fp1','fp2','fp3','qual','laps','pits','grid','sprint_laps','sprint_tyres','sprint_q','sprint_q_tyres','sprint']);
 
 const OF1_BASE = 'https://api.openf1.org/v1';
 const JOL_BASE = 'https://api.jolpi.ca/ergast/f1';
@@ -244,22 +236,22 @@ const computeAvgMap = (laps) => {
   return result;
 };
 
-/* ═══ API DISCLAIMER BANNER ═══ */
+/* ═══ API DISCLAIMER ═══ */
 const ApiDisclaimer = () => (
   <div className="rr4-api-disclaimer">
     <Info size={13} className="rr4-api-disclaimer-icon"/>
     <div>
-  <strong>Free API · ข้อมูลอาจไม่ใช่ Real-time</strong>
-  {'  '}ข้อมูลนี้ดึงมาจาก OpenF1 และ Jolpica-Ergast ซึ่งเป็น API สาธารณะแบบไม่เสียค่าใช้จ่าย
-  <span className="rr4-api-disclaimer-sep">·</span>
-  อาจมีความล่าช้าหรือ fetch ไม่ได้บางครั้ง
-  <span className="rr4-api-disclaimer-sep">·</span>
-  ระหว่างที่ Session กำลังแข่งขัน API ฟรีอาจถูกจำกัดการเข้าถึงชั่วคราว
-  <span className="rr4-api-disclaimer-sep">·</span>
-  โดยทั่วไปข้อมูลจะกลับมาใช้งานได้อีกครั้งหลังจบ Session ประมาณ 30–45 นาที
-  <span className="rr4-api-disclaimer-sep">·</span>
-  หากข้อมูลไม่โหลด ให้ลองกดแท็บใหม่อีกครั้ง
-</div>
+      <strong>Free API · ข้อมูลอาจไม่ใช่ Real-time</strong>
+      {'  '}ข้อมูลนี้ดึงมาจาก OpenF1 และ Jolpica-Ergast ซึ่งเป็น API สาธารณะแบบไม่เสียค่าใช้จ่าย
+      <span className="rr4-api-disclaimer-sep">·</span>
+      อาจมีความล่าช้าหรือ fetch ไม่ได้บางครั้ง
+      <span className="rr4-api-disclaimer-sep">·</span>
+      ระหว่างที่ Session กำลังแข่งขัน API ฟรีอาจถูกจำกัดการเข้าถึงชั่วคราว
+      <span className="rr4-api-disclaimer-sep">·</span>
+      โดยทั่วไปข้อมูลจะกลับมาใช้งานได้อีกครั้งหลังจบ Session ประมาณ 30–45 นาที
+      <span className="rr4-api-disclaimer-sep">·</span>
+      หากข้อมูลไม่โหลด ให้ลองกดแท็บใหม่อีกครั้ง
+    </div>
   </div>
 );
 
@@ -317,31 +309,17 @@ const InlineTyreBar = ({ stintMap, driverKey, totalLaps, hovered, setHovered, mi
         const name  = TYRE_COLORS[stint.compound?.toUpperCase()]?.name ?? stint.compound ?? '?';
         const isHov = hovered?.key === String(driverKey) && hovered?.si === si;
         return (
-          <div
-            key={si}
-            style={{position:'relative',flex:`${pct} 0 0`}}
+          <div key={si} style={{position:'relative',flex:`${pct} 0 0`}}
             onMouseEnter={() => setHovered({key:String(driverKey), si})}
             onMouseLeave={() => setHovered(null)}
           >
-            <div style={{
-              height:'14px', borderRadius:'3px', background:t.bg, border:`1px solid ${t.border}`,
-              cursor:'default', transition:'filter 0.15s', filter:isHov?'brightness(1.4)':'none',
-              display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden',
-            }}>
+            <div style={{height:'14px',borderRadius:'3px',background:t.bg,border:`1px solid ${t.border}`,cursor:'default',transition:'filter 0.15s',filter:isHov?'brightness(1.4)':'none',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
               {pct > 10 && (
-                <span style={{fontFamily:"'Russo One',sans-serif",fontSize:'0.52rem',color:t.text,pointerEvents:'none'}}>
-                  {t.label}
-                </span>
+                <span style={{fontFamily:"'Russo One',sans-serif",fontSize:'0.52rem',color:t.text,pointerEvents:'none'}}>{t.label}</span>
               )}
             </div>
             {isHov && (
-              <div style={{
-                position:'absolute', bottom:'calc(100% + 6px)', left:'50%', transform:'translateX(-50%)',
-                background:'#1a1a1f', border:'1px solid rgba(255,255,255,0.12)', borderRadius:'4px',
-                padding:'0.4rem 0.65rem', whiteSpace:'nowrap', zIndex:200, pointerEvents:'none',
-                fontFamily:"'DM Mono',monospace", fontSize:'0.72rem', color:'rgba(255,255,255,0.7)',
-                lineHeight:1.6, boxShadow:'0 6px 20px rgba(0,0,0,0.7)',
-              }}>
+              <div style={{position:'absolute',bottom:'calc(100% + 6px)',left:'50%',transform:'translateX(-50%)',background:'#1a1a1f',border:'1px solid rgba(255,255,255,0.12)',borderRadius:'4px',padding:'0.4rem 0.65rem',whiteSpace:'nowrap',zIndex:200,pointerEvents:'none',fontFamily:"'DM Mono',monospace",fontSize:'0.72rem',color:'rgba(255,255,255,0.7)',lineHeight:1.6,boxShadow:'0 6px 20px rgba(0,0,0,0.7)'}}>
                 <div style={{display:'flex',alignItems:'center',gap:'0.4rem',marginBottom:'0.2rem'}}>
                   <TyreBadge compound={stint.compound} size="sm"/>
                   <strong style={{color:'#fff',fontSize:'0.8rem'}}>{name}</strong>
@@ -375,28 +353,17 @@ const TyreStrip = ({ stints, totalLaps }) => {
         const name  = TYRE_COLORS[s.compound?.toUpperCase()]?.name ?? s.compound ?? '?';
         return (
           <div key={i} style={{position:'relative', flex:`${pct} 0 0`}}>
-            <div
-              className="rr4-tyre-strip-seg"
-              style={{width:'100%', background:t.bg, border:`1px solid ${t.border}`}}
-              onMouseEnter={()=>setHov(i)}
-              onMouseLeave={()=>setHov(null)}
+            <div className="rr4-tyre-strip-seg" style={{width:'100%',background:t.bg,border:`1px solid ${t.border}`}}
+              onMouseEnter={()=>setHov(i)} onMouseLeave={()=>setHov(null)}
             />
             {hov===i && (
-              <div style={{
-                position:'absolute',bottom:'calc(100% + 6px)',left:'50%',transform:'translateX(-50%)',
-                background:'#1a1a1f',border:'1px solid rgba(255,255,255,0.12)',borderRadius:'4px',
-                padding:'0.4rem 0.65rem',whiteSpace:'nowrap',zIndex:200,pointerEvents:'none',
-                fontFamily:"'DM Mono',monospace",fontSize:'0.72rem',color:'rgba(255,255,255,0.7)',
-                lineHeight:1.6,boxShadow:'0 6px 20px rgba(0,0,0,0.7)',
-              }}>
+              <div style={{position:'absolute',bottom:'calc(100% + 6px)',left:'50%',transform:'translateX(-50%)',background:'#1a1a1f',border:'1px solid rgba(255,255,255,0.12)',borderRadius:'4px',padding:'0.4rem 0.65rem',whiteSpace:'nowrap',zIndex:200,pointerEvents:'none',fontFamily:"'DM Mono',monospace",fontSize:'0.72rem',color:'rgba(255,255,255,0.7)',lineHeight:1.6,boxShadow:'0 6px 20px rgba(0,0,0,0.7)'}}>
                 <div style={{display:'flex',alignItems:'center',gap:'0.4rem',marginBottom:'0.2rem'}}>
                   <TyreBadge compound={s.compound} size="sm"/>
                   <strong style={{color:'#fff',fontSize:'0.8rem'}}>{name}</strong>
                 </div>
                 <div>L{s.lap_start}–{end} · {end-start} รอบ</div>
-                <div style={{color:age===0?'rgba(100,220,100,0.8)':'rgba(255,200,0,0.7)'}}>
-                  {age===0?'ยางใหม่':`ยางเก่า ${age} รอบ`}
-                </div>
+                <div style={{color:age===0?'rgba(100,220,100,0.8)':'rgba(255,200,0,0.7)'}}>{age===0?'ยางใหม่':`ยางเก่า ${age} รอบ`}</div>
               </div>
             )}
           </div>
@@ -431,7 +398,7 @@ const TyreTimeline = ({ stints, drivers, sortKeys=null, sessionLabel='Race', sho
       </div>
       <div className="rr4-strat-note">
         <span>🏎</span>
-        <div><strong>Tyre Strategy — {sessionLabel}</strong>hover แต่ละ stint เพื่อดูรายละเอียด</div>
+        <div><strong>Tyre Strategy — {sessionLabel}</strong> hover แต่ละ stint เพื่อดูรายละเอียด</div>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'180px 1fr',gap:'1rem',marginBottom:'0.35rem'}}>
         <div/>
@@ -639,15 +606,15 @@ const QualTable = ({ results, allDrivers=[], label='Qualifying', stints=[] }) =>
   const sorted=[...results].sort((a,b)=>parseInt(a.position)-parseInt(b.position));
   const qualIds=new Set(sorted.map(r=>r.Driver?.driverId));
   const missing=allDrivers.filter(r=>r.Driver?.driverId&&!qualIds.has(r.Driver.driverId)).map(r=>({Driver:r.Driver,Constructor:r.Constructor,number:r.number,position:'—',Q1:null,Q2:null,Q3:null}));
-  const q3c=hasQ3?10:null,q2c=hasQ2?15:null;
+  const q3c=hasQ3?10:null,q2c=hasQ2?16:null;
   const colSpan=3+(hasStints?1:0)+1+(hasQ2?1:0)+(hasQ3?1:0);
   const QCell=({val,best,elim,isPole})=>!val?<td className="rr4-qtd none">—</td>:<td className={`rr4-qtd ${val===best&&isPole?'pole':val===best?'q2best':elim?'elim':''}`}>{val}{val===best&&isPole?' ★':''}</td>;
   const ZoneRow=({label:zl,color})=>(<tr><td colSpan={colSpan} style={{padding:'0.3rem 0.9rem',fontFamily:"'Barlow Condensed',sans-serif",fontSize:'0.68rem',fontWeight:800,letterSpacing:'0.2em',textTransform:'uppercase',color,borderTop:`1px solid ${color}44`,borderBottom:`1px solid rgba(255,255,255,0.04)`,background:`${color}08`}}>── {zl}</td></tr>);
   const rows=[];
   sorted.forEach((r,i)=>{
     const pos=parseInt(r.position);
-    if(hasQ3&&pos===q3c+1) rows.push(<ZoneRow key="d2" label="ตกรอบ Q3 · 11–15" color="#ffa500"/>);
-    if(hasQ2&&pos===q2c+1) rows.push(<ZoneRow key="d1" label="ตกรอบ Q2 · 16+" color="rgba(255,255,255,0.3)"/>);
+    if(hasQ3&&pos===q3c+1) rows.push(<ZoneRow key="d2" label="ตกรอบ Q3 · 11–16" color="#ffa500"/>);
+    if(hasQ2&&pos===q2c+1) rows.push(<ZoneRow key="d1" label="ตกรอบ Q2 · 17+" color="rgba(255,255,255,0.3)"/>);
     const eQ2=hasQ3&&pos>(q3c??99),eQ1=hasQ2&&pos>(q2c??99);
     rows.push(
       <tr key={r.Driver?.driverId} className={eQ1?'q-elim-q1':eQ2?'q-elim-q2':''} style={{animationDelay:`${i*0.025}s`}}>
@@ -688,6 +655,111 @@ const QualTable = ({ results, allDrivers=[], label='Qualifying', stints=[] }) =>
         <tbody>{rows}</tbody>
       </table>
     </div>
+  );
+};
+
+/* ═══ SPRINT QUAL TABLE ═══ */
+const SprintQualTable = ({ laps, stints, drivers, allDrivers=[] }) => {
+  const [hovered, setHovered] = useState(null);
+  if (!laps.length) return <div className="rr4-empty">ไม่พบข้อมูล Sprint Shootout จาก OpenF1</div>;
+
+  const dMap = {};
+  drivers.forEach(d => { dMap[d.driver_number] = d; });
+
+  const best = {};
+  laps.forEach(l => {
+    if (!l.lap_duration || l.lap_duration <= 0) return;
+    if (!best[l.driver_number] || l.lap_duration < best[l.driver_number].lap_duration)
+      best[l.driver_number] = l;
+  });
+
+  const sorted = Object.values(best).sort((a, b) => a.lap_duration - b.lap_duration);
+  if (!sorted.length) return <div className="rr4-empty">ไม่มีข้อมูล Lap Time ใน Sprint Shootout</div>;
+
+  const stintMap = {};
+  stints.forEach(s => {
+    const k = String(s.driver_number);
+    if (!stintMap[k]) stintMap[k] = [];
+    stintMap[k].push(s);
+  });
+  Object.values(stintMap).forEach(arr => arr.sort((a, b) => (a.lap_start ?? 0) - (b.lap_start ?? 0)));
+  const totalLaps = Math.max(...stints.map(s => s.lap_end ?? 0), 1);
+  const hasStints = stints.length > 0;
+
+  const ref = sorted[0].lap_duration;
+  const SQ3_CUT = 10;
+  const SQ2_CUT = 16;
+  const colSpan = 3 + (hasStints ? 1 : 0) + 2;
+
+  const rows = [];
+  sorted.forEach((lap, i) => {
+    const pos = i + 1;
+    const d = dMap[lap.driver_number];
+    const color = d?.team_colour ? `#${d.team_colour}` : '#555';
+    const gap = i === 0 ? null : (lap.lap_duration - ref).toFixed(3);
+    const isFl = i === 0;
+    const elimSQ2 = pos > SQ3_CUT;
+    const elimSQ1 = pos > SQ2_CUT;
+
+    if (pos === SQ3_CUT + 1) {
+      rows.push(
+        <tr key="div-sq2">
+          <td colSpan={colSpan} style={{padding:'0.3rem 0.9rem',fontFamily:"'Barlow Condensed',sans-serif",fontSize:'0.68rem',fontWeight:800,letterSpacing:'0.2em',textTransform:'uppercase',color:'rgba(255,200,0,0.55)',borderTop:'1px solid rgba(255,200,0,0.25)',borderBottom:'1px solid rgba(255,255,255,0.04)',background:'rgba(255,200,0,0.05)'}}>── ตกรอบ SQ3 · อันดับ {SQ3_CUT + 1}–{SQ2_CUT}</td>
+        </tr>
+      );
+    }
+    if (pos === SQ2_CUT + 1) {
+      rows.push(
+        <tr key="div-sq1">
+          <td colSpan={colSpan} style={{padding:'0.3rem 0.9rem',fontFamily:"'Barlow Condensed',sans-serif",fontSize:'0.68rem',fontWeight:800,letterSpacing:'0.2em',textTransform:'uppercase',color:'rgba(255,255,255,0.25)',borderTop:'1px solid rgba(255,255,255,0.12)',borderBottom:'1px solid rgba(255,255,255,0.04)',background:'rgba(255,255,255,0.03)'}}>── ตกรอบ SQ2 · อันดับ {SQ2_CUT + 1}+</td>
+        </tr>
+      );
+    }
+
+    rows.push(
+      <tr key={lap.driver_number} className={elimSQ1 ? 'q-elim-q1' : elimSQ2 ? 'q-elim-q2' : ''} style={{animationDelay:`${i * 0.025}s`}}>
+        <td className={`rr4-pos ${pos <= 3 ? `p${pos}` : ''}`} style={pos > 3 ? {fontSize:'1.1rem',color:'rgba(255,255,255,0.3)'} : {}}>{pos}</td>
+        <td><DrvCell last={d?.last_name ?? d?.full_name?.split(' ').pop() ?? `#${lap.driver_number}`} first={d?.first_name ?? ''} num={lap.driver_number} color={color}/></td>
+        <td className="rr4-team-td">{d?.team_name ?? '—'}</td>
+        {hasStints && (
+          <td style={{minWidth:'110px',paddingTop:'0.85rem',paddingBottom:'0.85rem'}}>
+            <InlineTyreBar stintMap={stintMap} driverKey={lap.driver_number} totalLaps={totalLaps} hovered={hovered} setHovered={setHovered} minWidth="110px"/>
+          </td>
+        )}
+        <td className={`rr4-qtd ${isFl ? 'pole' : elimSQ1 ? 'elim' : ''}`} style={{textAlign:'right'}}>
+          {toMMSS(lap.lap_duration)}
+          {isFl && <span style={{marginLeft:'0.4rem',fontFamily:"'Barlow Condensed',sans-serif",fontSize:'0.72rem',fontWeight:800,color:'#FFD700',letterSpacing:'0.08em'}}>★ SQ</span>}
+        </td>
+        <td className="rr4-t gap" style={{textAlign:'right'}}>{gap ? `+${gap}` : '—'}</td>
+      </tr>
+    );
+  });
+
+  return (
+    <>
+      <div className="rr4-prac-note">
+        <Info size={14} color="rgba(80,180,255,0.7)" style={{flexShrink:0}}/>
+        <div>
+          <strong>Sprint Shootout Best Lap</strong> — OpenF1 ไม่แยก SQ1/SQ2/SQ3 ไว้
+          zone divider ประมาณจากจำนวนนักแข่งตามกฎ F1 (Top 8 → SQ3, Top 12 → SQ2)
+        </div>
+      </div>
+      <div className="rr4-tbl-wrap">
+        <table className="rr4-tbl">
+          <thead>
+            <tr>
+              <th className="c">P</th>
+              <th>นักแข่ง</th>
+              <th>ทีม</th>
+              {hasStints && <th>ยาง</th>}
+              <th className="r" style={{color:'rgba(255,165,0,0.7)'}}>Best Lap</th>
+              <th className="r">ห่าง P1</th>
+            </tr>
+          </thead>
+          <tbody>{rows}</tbody>
+        </table>
+      </div>
+    </>
   );
 };
 
@@ -1002,10 +1074,7 @@ const GridVsFinish = ({ raceResults, qualResults }) => {
       </div>
       <div className="gvf-note">
         <span>📊</span>
-        <div>
-          <strong>Grid vs Finish Position</strong>
-          เปรียบเทียบตำแหน่ง Start (Grid) กับตำแหน่งจบการแข่งขัน — รวมนักแข่งที่ Lapped และ Retired ด้วย
-        </div>
+        <div><strong>Grid vs Finish Position</strong> เปรียบเทียบตำแหน่ง Start (Grid) กับตำแหน่งจบการแข่งขัน — รวมนักแข่งที่ Lapped และ Retired ด้วย</div>
       </div>
       <div className="rr4-tbl-wrap">
         <table className="rr4-tbl" style={{minWidth:'580px'}}>
@@ -1102,46 +1171,33 @@ const GridVsFinish = ({ raceResults, qualResults }) => {
 };
 
 /* ═══════════════════════════════════════════════════════════════════
-   MAIN RaceResult  ← แก้ 3 จุด: useParams, useNavigate, fetch race data
+   MAIN RaceResult
 ═══════════════════════════════════════════════════════════════════ */
 const RaceResult = () => {
-  // ── 1. อ่าน season/round จาก URL แทน props ──
   const { season: seasonParam, slug } = useParams();
-  
   const navigate = useNavigate();
   const season = parseInt(seasonParam) || 2026;
-// const round = parseInt(roundParam) || null;
 
-  // ── 2. โหลดข้อมูล race จาก schedule เพื่อเอา raceName/Circuit ──
   const [race, setRace] = useState(null);
-
-  // useEffect(() => {
-  //   jolpicaApi.getSchedule(season).then(schedule => {
-  //     const found = schedule.find(r => String(r.round) === String(round));
-  //     setRace(found ?? null);
-  //   });
-  // }, [season, round]);
-
   useEffect(() => {
-  const found = getRaceBySlug(slug);
-  setRace(found ?? null);
-}, [slug]);
+    const found = getRaceBySlug(slug);
+    setRace(found ?? null);
+  }, [slug]);
 
-  // ── 3. onBack ใช้ navigate แทน prop ──
   const handleBack = () => navigate('/results');
 
-  const [tab,setTab]               = useState('race');
-  const [initLoading,setInit]      = useState(true);
-  const [tabLoading,setTabLoading] = useState(false);
-  const [warn,setWarn]             = useState(null);
+  const [tab, setTab]               = useState('race');
+  const [initLoading, setInit]      = useState(true);
+  const [tabLoading, setTabLoading] = useState(false);
+  const [warn, setWarn]             = useState(null);
 
   const [raceRes,       setRaceRes]       = useState([]);
   const [qualRes,       setQualRes]       = useState([]);
   const [sprintRes,     setSprintRes]     = useState([]);
-  const [sprintQualRes, setSprintQualRes] = useState([]);
   const [raceLaps,      setRaceLaps]      = useState([]);
   const [racePits,      setRacePits]      = useState([]);
   const [sprintLaps,    setSprintLaps]    = useState([]);
+  const [sprintQLaps,   setSprintQLaps]   = useState([]);
   const [fp1Laps,       setFp1Laps]       = useState([]);
   const [fp2Laps,       setFp2Laps]       = useState([]);
   const [fp3Laps,       setFp3Laps]       = useState([]);
@@ -1162,167 +1218,241 @@ const RaceResult = () => {
 
   const isSprint = !!(race?.Sprint);
 
-  useEffect(()=>{
-    if(!race) return;
-  const round = race.round;
+  useEffect(() => {
+    if (!race) return;
+    const round = race.round;
     fetched.current.clear();
-    sessionsRef.current=null;
-    skeyRef.current={};
-    driversRef.current={};
+    sessionsRef.current = null;
+    skeyRef.current = {};
+    driversRef.current = {};
     setInit(true); setWarn(null);
     setRaceLaps([]); setRacePits([]);
-    setSprintLaps([]); setFp1Laps([]); setFp2Laps([]); setFp3Laps([]);
+    setSprintLaps([]); setSprintQLaps([]);
+    setFp1Laps([]); setFp2Laps([]); setFp3Laps([]);
     setRaceStints([]); setQualStints([]); setSprintStints([]); setSprintQStints([]);
     setFp1Stints([]); setFp2Stints([]); setFp3Stints([]);
     setDrivers({});
 
     const raceDate = race?.date ? new Date(race.date) : new Date();
-    const jolFetches=[
-      jolGet(`/${season}/${round}/results.json?limit=30`).then(d=>setRaceRes(d?.MRData?.RaceTable?.Races?.[0]?.Results??[])),
-      jolGet(`/${season}/${round}/qualifying.json?limit=30`).then(d=>setQualRes(d?.MRData?.RaceTable?.Races?.[0]?.QualifyingResults??[])),
-      ...(isSprint?[jolGet(`/${season}/${round}/sprint.json?limit=30`).then(d=>setSprintRes(d?.MRData?.RaceTable?.Races?.[0]?.SprintResults??[]))]:[] ),
+    const jolFetches = [
+      jolGet(`/${season}/${round}/results.json?limit=30`).then(d => setRaceRes(d?.MRData?.RaceTable?.Races?.[0]?.Results ?? [])),
+      jolGet(`/${season}/${round}/qualifying.json?limit=30`).then(d => setQualRes(d?.MRData?.RaceTable?.Races?.[0]?.QualifyingResults ?? [])),
+      ...(isSprint ? [
+        jolGet(`/${season}/${round}/sprint.json?limit=30`).then(d => setSprintRes(d?.MRData?.RaceTable?.Races?.[0]?.SprintResults ?? [])),
+      ] : []),
     ];
 
-    const of1Eager=of1Get(`/sessions?year=${season}`)
-      .then(async all=>{
-        if(!Array.isArray(all)) return;
-        const raceTs=raceDate.getTime();
-        const weekend=all.filter(s=>Math.abs(new Date(s.date_start).getTime()-raceTs)<5*86400000);
-        sessionsRef.current=weekend;
-        weekend.forEach(s=>{skeyRef.current[s.session_name?.toLowerCase()]=s.session_key;});
-        const raceKey=weekend.find(s=>s.session_name?.toLowerCase()==='race')?.session_key??null;
-        if(!raceKey) return;
-        const drvData=await of1Get(`/drivers?session_key=${raceKey}`);
-        if(Array.isArray(drvData)){
-          driversRef.current={...driversRef.current,[raceKey]:drvData};
-          setDrivers(prev=>({...prev,[raceKey]:drvData}));
+    const of1Eager = of1Get(`/sessions?year=${season}`)
+      .then(async all => {
+        if (!Array.isArray(all)) return;
+        const raceTs = raceDate.getTime();
+        const weekend = all.filter(s => Math.abs(new Date(s.date_start).getTime() - raceTs) < 5 * 86400000);
+        sessionsRef.current = weekend;
+        weekend.forEach(s => { skeyRef.current[s.session_name?.toLowerCase()] = s.session_key; });
+        const raceKey = weekend.find(s => s.session_name?.toLowerCase() === 'race')?.session_key ?? null;
+        if (!raceKey) return;
+        const drvData = await of1Get(`/drivers?session_key=${raceKey}`);
+        if (Array.isArray(drvData)) {
+          driversRef.current = { ...driversRef.current, [raceKey]: drvData };
+          setDrivers(prev => ({ ...prev, [raceKey]: drvData }));
           fetched.current.add('_drivers');
         }
       })
-      .catch(()=>{});
+      .catch(() => {});
 
-    Promise.allSettled([...jolFetches.map(p=>p.catch(()=>{})), of1Eager])
-      .finally(()=>setInit(false));
-  },[season, race]);
+    Promise.allSettled([...jolFetches.map(p => p.catch(() => {})), of1Eager])
+      .finally(() => setInit(false));
+  }, [season, race]);
 
-  useEffect(()=>{
-    if(!initLoading && tab==='race') loadTab('race');
-  },[initLoading]);
+  useEffect(() => {
+    if (!initLoading && tab === 'race') loadTab('race');
+  }, [initLoading]);
 
-  const ensureSessions=useCallback(async()=>{
-    if(sessionsRef.current) return sessionsRef.current;
-    const all=await of1Get(`/sessions?year=${season}`);
-    if(!Array.isArray(all)){sessionsRef.current=[];return [];}
-    const raceTs=new Date(race?.date??Date.now()).getTime();
-    sessionsRef.current=all.filter(s=>Math.abs(new Date(s.date_start).getTime()-raceTs)<5*86400000);
-    sessionsRef.current.forEach(s=>{skeyRef.current[s.session_name?.toLowerCase()]=s.session_key;});
+  const ensureSessions = useCallback(async () => {
+    if (sessionsRef.current) return sessionsRef.current;
+    const all = await of1Get(`/sessions?year=${season}`);
+    if (!Array.isArray(all)) { sessionsRef.current = []; return []; }
+    const raceTs = new Date(race?.date ?? Date.now()).getTime();
+    sessionsRef.current = all.filter(s => Math.abs(new Date(s.date_start).getTime() - raceTs) < 5 * 86400000);
+    sessionsRef.current.forEach(s => { skeyRef.current[s.session_name?.toLowerCase()] = s.session_key; });
     return sessionsRef.current;
-  },[season,race?.date]);
+  }, [season, race?.date]);
 
-  const getKey=(sessions,name)=>sessions.find(s=>s.session_name?.toLowerCase()===name.toLowerCase())?.session_key??null;
+  const getKey = (sessions, name) => sessions.find(s => s.session_name?.toLowerCase() === name.toLowerCase())?.session_key ?? null;
 
-  const loadTab=useCallback(async(newTab)=>{
-    if(fetched.current.has(newTab)||!OF1_TABS.has(newTab)) return;
-    if(newTab==='grid'){fetched.current.add('grid');return;}
+  const loadTab = useCallback(async (newTab) => {
+    if (fetched.current.has(newTab) || !OF1_TABS.has(newTab)) return;
+    if (newTab === 'grid') { fetched.current.add('grid'); return; }
     setTabLoading(true);
-    try{
-      const sessions=await ensureSessions();
-      if(!sessions.length){setWarn('ไม่พบ session ใน OpenF1');fetched.current.add(newTab);return;}
-      const fetchForSession=async(sessionName,fetchFn)=>{
-        const key=getKey(sessions,sessionName);
-        if(!key) return;
-        const needDrivers=!driversRef.current[key];
-        const promises=[fetchFn(key)];
-        if(needDrivers) promises.push(
-          of1Get(`/drivers?session_key=${key}`).then(d=>{
-            if(Array.isArray(d)){driversRef.current={...driversRef.current,[key]:d};setDrivers({...driversRef.current});}
+    try {
+      const sessions = await ensureSessions();
+      if (!sessions.length) { setWarn('ไม่พบ session ใน OpenF1'); fetched.current.add(newTab); return; }
+
+      const fetchForSession = async (sessionName, fetchFn) => {
+        const key = getKey(sessions, sessionName);
+        if (!key) return;
+        const needDrivers = !driversRef.current[key];
+        const promises = [fetchFn(key)];
+        if (needDrivers) promises.push(
+          of1Get(`/drivers?session_key=${key}`).then(d => {
+            if (Array.isArray(d)) { driversRef.current = { ...driversRef.current, [key]: d }; setDrivers({ ...driversRef.current }); }
           })
         );
         await Promise.all(promises);
       };
-      if(newTab==='race'){
-        await fetchForSession(OF1_SESSION.race, async key=>{const st=await of1Get(`/stints?session_key=${key}`);setRaceStints(Array.isArray(st)?st:[]);});
-      }else if(newTab==='laps'){
-        await fetchForSession(OF1_SESSION.race, async key=>{const d=await of1Get(`/laps?session_key=${key}`);setRaceLaps(Array.isArray(d)?d:[]);});
-      }else if(newTab==='pits'){
-        await fetchForSession(OF1_SESSION.race, async key=>{
-          const[ps,st]=await Promise.all([of1Get(`/pit?session_key=${key}`),fetched.current.has('race')?Promise.resolve(null):of1Get(`/stints?session_key=${key}`)]);
-          setRacePits(Array.isArray(ps)?ps:[]);
-          if(st!==null&&Array.isArray(st)){setRaceStints(st);fetched.current.add('race');}
+
+      if (newTab === 'race') {
+        await fetchForSession(OF1_SESSION.race, async key => {
+          const st = await of1Get(`/stints?session_key=${key}`);
+          setRaceStints(Array.isArray(st) ? st : []);
         });
-      }else if(newTab==='qual'){
-        await fetchForSession(OF1_SESSION.qual, async key=>{const st=await of1Get(`/stints?session_key=${key}`);setQualStints(Array.isArray(st)?st:[]);});
-      }else if(newTab==='fp1'){
-        await fetchForSession(OF1_SESSION.fp1, async key=>{const[l,st]=await Promise.all([of1Get(`/laps?session_key=${key}`),of1Get(`/stints?session_key=${key}`)]);setFp1Laps(Array.isArray(l)?l:[]);setFp1Stints(Array.isArray(st)?st:[]);});
-      }else if(newTab==='fp2'){
-        await fetchForSession(OF1_SESSION.fp2, async key=>{const[l,st]=await Promise.all([of1Get(`/laps?session_key=${key}`),of1Get(`/stints?session_key=${key}`)]);setFp2Laps(Array.isArray(l)?l:[]);setFp2Stints(Array.isArray(st)?st:[]);});
-      }else if(newTab==='fp3'){
-        await fetchForSession(OF1_SESSION.fp3, async key=>{const[l,st]=await Promise.all([of1Get(`/laps?session_key=${key}`),of1Get(`/stints?session_key=${key}`)]);setFp3Laps(Array.isArray(l)?l:[]);setFp3Stints(Array.isArray(st)?st:[]);});
-      }else if(newTab==='sprint_laps'){
-        await fetchForSession(OF1_SESSION.sprint, async key=>{const[l,st]=await Promise.all([of1Get(`/laps?session_key=${key}`),of1Get(`/stints?session_key=${key}`)]);setSprintLaps(Array.isArray(l)?l:[]);setSprintStints(Array.isArray(st)?st:[]);fetched.current.add('sprint_tyres');});
-      }else if(newTab==='sprint_tyres'){
-        if(!fetched.current.has('sprint_tyres')){
-          await fetchForSession(OF1_SESSION.sprint, async key=>{const[l,st]=await Promise.all([of1Get(`/laps?session_key=${key}`),of1Get(`/stints?session_key=${key}`)]);setSprintLaps(Array.isArray(l)?l:[]);setSprintStints(Array.isArray(st)?st:[]);fetched.current.add('sprint_laps');});
+      } else if (newTab === 'laps') {
+        await fetchForSession(OF1_SESSION.race, async key => {
+          const d = await of1Get(`/laps?session_key=${key}`);
+          setRaceLaps(Array.isArray(d) ? d : []);
+        });
+      } else if (newTab === 'pits') {
+        await fetchForSession(OF1_SESSION.race, async key => {
+          const [ps, st] = await Promise.all([
+            of1Get(`/pit?session_key=${key}`),
+            fetched.current.has('race') ? Promise.resolve(null) : of1Get(`/stints?session_key=${key}`),
+          ]);
+          setRacePits(Array.isArray(ps) ? ps : []);
+          if (st !== null && Array.isArray(st)) { setRaceStints(st); fetched.current.add('race'); }
+        });
+      } else if (newTab === 'qual') {
+        await fetchForSession(OF1_SESSION.qual, async key => {
+          const st = await of1Get(`/stints?session_key=${key}`);
+          setQualStints(Array.isArray(st) ? st : []);
+        });
+      } else if (newTab === 'sprint') {
+        // ── FIX: sprint อยู่ใน else-if chain ถูกต้องแล้ว ──
+        await fetchForSession(OF1_SESSION.sprint, async key => {
+          const st = await of1Get(`/stints?session_key=${key}`);
+          setSprintStints(Array.isArray(st) ? st : []);
+        });
+      } else if (newTab === 'sprint_q') {
+        await fetchForSession(OF1_SESSION.sprint_q, async key => {
+          const [laps, st] = await Promise.all([
+            of1Get(`/laps?session_key=${key}`),
+            of1Get(`/stints?session_key=${key}`),
+          ]);
+          setSprintQLaps(Array.isArray(laps) ? laps : []);
+          setSprintQStints(Array.isArray(st) ? st : []);
+          fetched.current.add('sprint_q_tyres');
+        });
+      } else if (newTab === 'fp1') {
+        await fetchForSession(OF1_SESSION.fp1, async key => {
+          const [l, st] = await Promise.all([of1Get(`/laps?session_key=${key}`), of1Get(`/stints?session_key=${key}`)]);
+          setFp1Laps(Array.isArray(l) ? l : []); setFp1Stints(Array.isArray(st) ? st : []);
+        });
+      } else if (newTab === 'fp2') {
+        await fetchForSession(OF1_SESSION.fp2, async key => {
+          const [l, st] = await Promise.all([of1Get(`/laps?session_key=${key}`), of1Get(`/stints?session_key=${key}`)]);
+          setFp2Laps(Array.isArray(l) ? l : []); setFp2Stints(Array.isArray(st) ? st : []);
+        });
+      } else if (newTab === 'fp3') {
+        await fetchForSession(OF1_SESSION.fp3, async key => {
+          const [l, st] = await Promise.all([of1Get(`/laps?session_key=${key}`), of1Get(`/stints?session_key=${key}`)]);
+          setFp3Laps(Array.isArray(l) ? l : []); setFp3Stints(Array.isArray(st) ? st : []);
+        });
+      } else if (newTab === 'sprint_laps') {
+        await fetchForSession(OF1_SESSION.sprint, async key => {
+          const [l, st] = await Promise.all([of1Get(`/laps?session_key=${key}`), of1Get(`/stints?session_key=${key}`)]);
+          setSprintLaps(Array.isArray(l) ? l : []); setSprintStints(Array.isArray(st) ? st : []);
+          fetched.current.add('sprint_tyres');
+        });
+      } else if (newTab === 'sprint_tyres') {
+        if (!fetched.current.has('sprint_tyres')) {
+          await fetchForSession(OF1_SESSION.sprint, async key => {
+            const [l, st] = await Promise.all([of1Get(`/laps?session_key=${key}`), of1Get(`/stints?session_key=${key}`)]);
+            setSprintLaps(Array.isArray(l) ? l : []); setSprintStints(Array.isArray(st) ? st : []);
+            fetched.current.add('sprint_laps');
+          });
         }
-      }else if(newTab==='sprint_q_tyres'){
-        await fetchForSession(OF1_SESSION.sprint_q, async key=>{const st=await of1Get(`/stints?session_key=${key}`);setSprintQStints(Array.isArray(st)?st:[]);});
+      } else if (newTab === 'sprint_q_tyres') {
+        if (!fetched.current.has('sprint_q_tyres')) {
+          await fetchForSession(OF1_SESSION.sprint_q, async key => {
+            const [laps, st] = await Promise.all([
+              of1Get(`/laps?session_key=${key}`),
+              of1Get(`/stints?session_key=${key}`),
+            ]);
+            setSprintQLaps(Array.isArray(laps) ? laps : []);
+            setSprintQStints(Array.isArray(st) ? st : []);
+            fetched.current.add('sprint_q');
+          });
+        }
       }
+
       fetched.current.add(newTab);
-    }catch{setWarn('ดึงข้อมูลจาก OpenF1 ไม่สำเร็จ');}
-    finally{setTabLoading(false);}
-  },[ensureSessions]);
+    } catch {
+      setWarn('ดึงข้อมูลจาก OpenF1 ไม่สำเร็จ');
+    } finally {
+      setTabLoading(false);
+    }
+  }, [ensureSessions]);
 
-  const getTabDrivers=(sessionName)=>{
-    const key=skeyRef.current[sessionName?.toLowerCase()];
-    if(key&&drivers[key]?.length) return drivers[key];
-    const first=Object.values(drivers).find(arr=>arr?.length);
-    return first??[];
+  const getTabDrivers = (sessionName) => {
+    const key = skeyRef.current[sessionName?.toLowerCase()];
+    if (key && drivers[key]?.length) return drivers[key];
+    const first = Object.values(drivers).find(arr => arr?.length);
+    return first ?? [];
   };
-  const handleTab=key=>{setTab(key);setWarn(null);loadTab(key);};
-  const isLoaded=key=>fetched.current.has(key);
 
-  const raceSortKeys={};
-  raceRes.forEach(r=>{raceSortKeys[r.number]=parseInt(r.position)||99;});
-  const sprintSortKeys={};
-  sprintRes.forEach(r=>{sprintSortKeys[r.number]=parseInt(r.position)||99;});
+  const handleTab = key => { setTab(key); setWarn(null); loadTab(key); };
+  const isLoaded = key => fetched.current.has(key);
 
-  const TAB_GROUPS=[
-    {label:'🏎  Race Weekend',tabs:[
-      {key:'race',label:'🏁 Race'},
-      {key:'qual',label:'⏱ Qualifying'},
-      ...(isSprint?[{key:'sprint',label:'🏃 Sprint',cls:'sprint-tab'},{key:'sprint_q',label:'⚡ Sprint Quali',cls:'sprint-tab'}]:[]),
+  const raceSortKeys = {};
+  raceRes.forEach(r => { raceSortKeys[r.number] = parseInt(r.position) || 99; });
+  const sprintSortKeys = {};
+  sprintRes.forEach(r => { sprintSortKeys[r.number] = parseInt(r.position) || 99; });
+
+  const TAB_GROUPS = [
+    { label: '🏎  Race Weekend', tabs: [
+      { key: 'race',     label: '🏁 Race' },
+      { key: 'qual',     label: '⏱ Qualifying' },
+      ...(isSprint ? [
+        { key: 'sprint',   label: '🏃 Sprint',       cls: 'sprint-tab' },
+        { key: 'sprint_q', label: '⚡ Sprint Quali', cls: 'sprint-tab' },
+      ] : []),
     ]},
-    {label:'🔬  Race Data · OpenF1',tabs:[
-      {key:'laps', label:'📊 Lap Times'},
-      {key:'pits', label:'🔧 Pit Stops'},
-      {key:'grid', label:'📈 Grid vs Finish', cls:'grid-tab'},
-      ...(isSprint?[{key:'sprint_laps',label:'🏃 Sprint Laps',cls:'sprint-tab'},{key:'sprint_tyres',label:'🏃 Sprint Tyres',cls:'sprint-tab'},{key:'sprint_q_tyres',label:'⚡ SQ Tyres',cls:'sprint-tab'}]:[]),
+    { label: '🔬  Race Data · OpenF1', tabs: [
+      { key: 'laps', label: '📊 Lap Times' },
+      { key: 'pits', label: '🔧 Pit Stops' },
+      { key: 'grid', label: '📈 Grid vs Finish', cls: 'grid-tab' },
     ]},
-    {label:'🧪  Practice · OpenF1', tabs:[
-      {key:'fp1', label:'FP 1', cls:'practice-tab'},
-      ...(!isSprint ? [{key:'fp2', label:'FP 2', cls:'practice-tab'},{key:'fp3', label:'FP 3', cls:'practice-tab'}] : []),
+    { label: '🧪  Practice · OpenF1', tabs: [
+      { key: 'fp1', label: 'FP 1', cls: 'practice-tab' },
+      ...(!isSprint ? [
+        { key: 'fp2', label: 'FP 2', cls: 'practice-tab' },
+        { key: 'fp3', label: 'FP 3', cls: 'practice-tab' },
+      ] : []),
     ]},
   ];
 
-  const SEC_LABELS={
-    race:'ผลการแข่งขัน',qual:'Qualifying',sprint:'Sprint Race',sprint_q:'Sprint Qualifying',
-    laps:'Lap Times',pits:'Pit Stops',grid:'Grid vs Finish Position',
-    sprint_laps:'Sprint Lap Times',sprint_tyres:'Tyre Strategy — Sprint',sprint_q_tyres:'Tyre Strategy — Sprint Shootout',
-    fp1:'Practice 1',fp2:'Practice 2',fp3:'Practice 3',
+  const SEC_LABELS = {
+    race: 'ผลการแข่งขัน', qual: 'Qualifying',
+    sprint: 'Sprint Race', sprint_q: 'Sprint Qualifying',
+    laps: 'Lap Times', pits: 'Pit Stops', grid: 'Grid vs Finish Position',
+    sprint_laps: 'Sprint Lap Times', sprint_tyres: 'Tyre Strategy — Sprint',
+    sprint_q_tyres: 'Tyre Strategy — Sprint Shootout',
+    fp1: 'Practice 1', fp2: 'Practice 2', fp3: 'Practice 3',
   };
 
-  const countBadge={laps:raceLaps.length,pits:racePits.length,sprint_laps:sprintLaps.length,sprint_tyres:sprintStints.length,sprint_q_tyres:sprintQStints.length,fp1:fp1Laps.length,fp2:fp2Laps.length,fp3:fp3Laps.length};
-  const nameShort=(race?.raceName??'').replace('Grand Prix','').trim();
-  // const circuit=race?.Circuit?.circuitName??'';
-  // const loc=[race?.Circuit?.Location?.locality,race?.Circuit?.Location?.country].filter(Boolean).join(', ');
+  const countBadge = {
+    laps: raceLaps.length, pits: racePits.length,
+    sprint_laps: sprintLaps.length, sprint_tyres: sprintStints.length,
+    sprint_q: sprintQLaps.length, sprint_q_tyres: sprintQStints.length,
+    fp1: fp1Laps.length, fp2: fp2Laps.length, fp3: fp3Laps.length,
+  };
 
+  const nameShort = (race?.raceName ?? '').replace('Grand Prix', '').trim();
   const circuit = race?.Circuit?.circuitName ?? race?.circuit ?? '';
-const loc = [
-  race?.Circuit?.Location?.locality ?? race?.locality,
-  race?.Circuit?.Location?.country  ?? race?.country,
-].filter(Boolean).join(', ');
+  const loc = [
+    race?.Circuit?.Location?.locality ?? race?.locality,
+    race?.Circuit?.Location?.country  ?? race?.country,
+  ].filter(Boolean).join(', ');
 
-  // รอ race data โหลดก่อน
   if (!race) {
     return (
       <div className="rr4">
@@ -1345,7 +1475,6 @@ const loc = [
       <div className="rr4-shell">
         <div className="rr4-noise"/><div className="rr4-scan"/><div className="rr4-glow"/>
         <div className="rr4-inner">
-          {/* ── ปุ่มกลับใช้ handleBack แทน onBack prop ── */}
           <button className="rr4-back" onClick={handleBack}><ChevronLeft size={14}/> ตารางแข่ง</button>
 
           <div className="rr4-hero">
@@ -1355,18 +1484,18 @@ const loc = [
             <div className="rr4-hero-meta">
               <span><Flag size={13}/>{loc}</span>
               <span><Timer size={13}/>{fmtDate(race?.date)}</span>
-              {isSprint&&<span className="rr4-sprint-badge">🏃 Sprint Weekend</span>}
+              {isSprint && <span className="rr4-sprint-badge">🏃 Sprint Weekend</span>}
             </div>
           </div>
 
           <div className="rr4-tab-groups">
-            {TAB_GROUPS.map((grp,gi)=>(
+            {TAB_GROUPS.map((grp, gi) => (
               <div key={gi}>
                 <div className="rr4-group-label">{grp.label}</div>
                 <div className="rr4-tab-row">
-                  {grp.tabs.map(t=>(
-                    <button key={t.key} className={`rr4-tab ${t.cls??''} ${tab===t.key?'active':''}`} onClick={()=>handleTab(t.key)}>
-                      {isLoaded(t.key)&&tab!==t.key&&<span className="rr4-tab-dot"/>}
+                  {grp.tabs.map(t => (
+                    <button key={t.key} className={`rr4-tab ${t.cls ?? ''} ${tab === t.key ? 'active' : ''}`} onClick={() => handleTab(t.key)}>
+                      {isLoaded(t.key) && tab !== t.key && <span className="rr4-tab-dot"/>}
                       {t.label}
                     </button>
                   ))}
@@ -1377,39 +1506,48 @@ const loc = [
 
           <ApiDisclaimer />
 
-          {warn&&<div className="rr4-warn"><AlertTriangle size={16} color="#ffa500" style={{flexShrink:0,marginTop:2}}/><div><strong>OpenF1 Notice</strong>{warn}</div></div>}
+          {warn && (
+            <div className="rr4-warn">
+              <AlertTriangle size={16} color="#ffa500" style={{flexShrink:0,marginTop:2}}/>
+              <div><strong>OpenF1 Notice</strong>{warn}</div>
+            </div>
+          )}
 
-          {initLoading?(
+          {initLoading ? (
             <div className="rr4-loading-main">
               <div className="rr4-load-track"><div className="rr4-load-bar"/></div>
               <p className="rr4-load-txt">loading race data...</p>
             </div>
-          ):(
+          ) : (
             <>
               <div className="rr4-sec-hd">
                 <span className="rr4-sec-title">{SEC_LABELS[tab]}</span>
                 <div className="rr4-sec-line"/>
-                {countBadge[tab]>0&&<span className="rr4-sec-badge">{countBadge[tab].toLocaleString()} rows</span>}
-                {tab==='grid'&&raceRes.length>0&&<span className="rr4-sec-badge">{raceRes.length} นักแข่ง</span>}
-                {OF1_TABS.has(tab)&&tab!=='grid'&&<span className="rr4-api-source">OpenF1</span>}
-                {tab==='grid'&&<span className="rr4-api-source">Jolpica Ergast</span>}
+                {countBadge[tab] > 0 && <span className="rr4-sec-badge">{countBadge[tab].toLocaleString()} rows</span>}
+                {tab === 'grid' && raceRes.length > 0 && <span className="rr4-sec-badge">{raceRes.length} นักแข่ง</span>}
+                {OF1_TABS.has(tab) && tab !== 'grid' && <span className="rr4-api-source">OpenF1</span>}
+                {tab === 'grid' && <span className="rr4-api-source">Jolpica Ergast</span>}
               </div>
 
-              {tabLoading?<TabSpinner label="กำลังโหลดจาก OpenF1..."/>:(
+              {tabLoading ? <TabSpinner label="กำลังโหลดจาก OpenF1..."/> : (
                 <>
-                  {tab==='race'           && <RaceTable results={raceRes} showPts={true} stints={raceStints}/>}
-                  {tab==='qual'           && <QualTable results={qualRes} allDrivers={raceRes} stints={qualStints}/>}
-                  {tab==='sprint'         && <RaceTable results={sprintRes} showPts={true} stints={sprintStints}/>}
-                  {tab==='sprint_q'       && <QualTable results={sprintQualRes} allDrivers={raceRes} label="Sprint Qualifying" stints={sprintQStints}/>}
-                  {tab==='laps'           && <LapTable laps={raceLaps} drivers={getTabDrivers('race')}/>}
-                  {tab==='pits'           && <PitTable pits={racePits} drivers={getTabDrivers('race')} stints={raceStints}/>}
-                  {tab==='grid'           && <GridVsFinish raceResults={raceRes} qualResults={qualRes}/>}
-                  {tab==='sprint_laps'    && <LapTable laps={sprintLaps} drivers={getTabDrivers('sprint')}/>}
-                  {tab==='sprint_tyres'   && <TyreTimeline stints={sprintStints} drivers={getTabDrivers('sprint')} sortKeys={sprintSortKeys} sessionLabel="Sprint Race" showDetailTable={true}/>}
-                  {tab==='sprint_q_tyres' && <TyreTimeline stints={sprintQStints} drivers={getTabDrivers('sprint shootout')} sortKeys={null} sessionLabel="Sprint Shootout" showDetailTable={true}/>}
-                  {tab==='fp1'            && <PracticeTable laps={fp1Laps} stints={fp1Stints} drivers={getTabDrivers('practice 1')} sessionName="Practice 1"/>}
-                  {tab==='fp2'            && <PracticeTable laps={fp2Laps} stints={fp2Stints} drivers={getTabDrivers('practice 2')} sessionName="Practice 2"/>}
-                  {tab==='fp3'            && <PracticeTable laps={fp3Laps} stints={fp3Stints} drivers={getTabDrivers('practice 3')} sessionName="Practice 3"/>}
+                  {tab === 'race'     && <RaceTable results={raceRes} showPts={true} stints={raceStints}/>}
+                  {tab === 'qual'     && <QualTable results={qualRes} allDrivers={raceRes} stints={qualStints}/>}
+                  {tab === 'sprint'   && <RaceTable results={sprintRes} showPts={true} stints={sprintStints}/>}
+                  {tab === 'sprint_q' && (
+                    <SprintQualTable
+                      laps={sprintQLaps}
+                      stints={sprintQStints}
+                      drivers={getTabDrivers('sprint qualifying')}
+                      allDrivers={raceRes}
+                    />
+                  )}
+                  {tab === 'laps'  && <LapTable laps={raceLaps} drivers={getTabDrivers('race')}/>}
+                  {tab === 'pits'  && <PitTable pits={racePits} drivers={getTabDrivers('race')} stints={raceStints}/>}
+                  {tab === 'grid'  && <GridVsFinish raceResults={raceRes} qualResults={qualRes}/>}
+                  {tab === 'fp1'   && <PracticeTable laps={fp1Laps} stints={fp1Stints} drivers={getTabDrivers('practice 1')} sessionName="Practice 1"/>}
+                  {tab === 'fp2'   && <PracticeTable laps={fp2Laps} stints={fp2Stints} drivers={getTabDrivers('practice 2')} sessionName="Practice 2"/>}
+                  {tab === 'fp3'   && <PracticeTable laps={fp3Laps} stints={fp3Stints} drivers={getTabDrivers('practice 3')} sessionName="Practice 3"/>}
                 </>
               )}
             </>
