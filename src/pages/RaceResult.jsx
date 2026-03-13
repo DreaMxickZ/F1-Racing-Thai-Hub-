@@ -249,13 +249,17 @@ const ApiDisclaimer = () => (
   <div className="rr4-api-disclaimer">
     <Info size={13} className="rr4-api-disclaimer-icon"/>
     <div>
-      <strong>Free API · ข้อมูลอาจไม่ใช่ Real-time</strong>
-      {'  '}ข้อมูลนี้ดึงมาจาก OpenF1 และ Jolpica-Ergast ซึ่งเป็น API สาธารณะแบบไม่เสียค่าใช้จ่าย
-      <span className="rr4-api-disclaimer-sep">·</span>
-      อาจมีความล่าช้าหรือ fetch ไม่ได้บางครั้ง
-      <span className="rr4-api-disclaimer-sep">·</span>
-      หากข้อมูลไม่โหลด ให้ลองกดแท็บใหม่อีกครั้ง
-    </div>
+  <strong>Free API · ข้อมูลอาจไม่ใช่ Real-time</strong>
+  {'  '}ข้อมูลนี้ดึงมาจาก OpenF1 และ Jolpica-Ergast ซึ่งเป็น API สาธารณะแบบไม่เสียค่าใช้จ่าย
+  <span className="rr4-api-disclaimer-sep">·</span>
+  อาจมีความล่าช้าหรือ fetch ไม่ได้บางครั้ง
+  <span className="rr4-api-disclaimer-sep">·</span>
+  ระหว่างที่ Session กำลังแข่งขัน API ฟรีอาจถูกจำกัดการเข้าถึงชั่วคราว
+  <span className="rr4-api-disclaimer-sep">·</span>
+  โดยทั่วไปข้อมูลจะกลับมาใช้งานได้อีกครั้งหลังจบ Session ประมาณ 30–45 นาที
+  <span className="rr4-api-disclaimer-sep">·</span>
+  หากข้อมูลไม่โหลด ให้ลองกดแท็บใหม่อีกครั้ง
+</div>
   </div>
 );
 
