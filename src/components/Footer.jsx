@@ -159,7 +159,7 @@ const Footer = () => {
             </div>
             <p className="ft-desc">
               ศูนย์รวมข้อมูล Formula 1 ฤดูกาล 2026<br/>
-              ข่าวสาร ผลการแข่งขัน และสถิติแบบเรียลไทม์
+              ข่าวสาร ผลการแข่งขัน และสถิติ
             </p>
             <div className="ft-sources">
               <span className="ft-source-item"><span className="ft-source-dot" />OpenF1 API</span>
