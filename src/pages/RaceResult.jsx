@@ -1484,7 +1484,7 @@ const RaceResult = () => {
             <div className="rr4-hero-meta">
               <span><Flag size={13}/>{loc}</span>
               <span><Timer size={13}/>{fmtDate(race?.date)}</span>
-              {isSprint && <span className="rr4-sprint-badge">🏃 Sprint Weekend</span>}
+              {isSprint && <span className="rr4-sprint-badge">Sprint Weekend</span>}
             </div>
           </div>
 
