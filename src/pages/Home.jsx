@@ -270,6 +270,14 @@ const SCOPED_CSS = `
   }
 `;
 
+// ── helper: สร้าง URL แบบเดียวกับ NewsDetail ────────────────────────────────
+const buildNewsUrl = (item) => {
+  const d = new Date(item.created_at);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  return `/news/${y}/${m}/${item.slug}`;
+};
+
 const Home = () => {
   const [driverStandings, setDriverStandings]       = useState([]);
   const [constructorStandings, setConstructorStandings] = useState([]);
@@ -397,46 +405,46 @@ const Home = () => {
             </div>
 
             {news.length > 0 ? (
-  <div className="hp-news-grid">
-    {news.map((item, i) => (
-      <Link
-        key={item.id}
-        to={`/news/${item.id}`}
-        className="hp-news-card"
-        style={{ animationDelay: `${0.05 + i * 0.07}s` }}
-      >
-        <div className="hp-news-card-bar" />
-        {item.image_url && (
-          <div className="hp-news-img-wrap" style={{ height: '300px', overflow: 'hidden', flexShrink: 0 }}>
-            <img
-              src={item.image_url}
-              alt={item.title}
-              className="hp-news-img"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            />
-          </div>
-        )}
-        <div className="hp-news-body">
-          <div className="hp-news-meta">
-            <span>
-              <Calendar size={11} />
-              {new Date(item.created_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
-            </span>
-            <span>
-              <Clock size={11} />
-              {Math.max(1, Math.ceil((item.content?.length || 0) / 800))} นาที
-            </span>
-          </div>
-          <h3 className="hp-news-title">{item.title}</h3>
-          <p className="hp-news-excerpt">{item.content}</p>
-          <span className="hp-news-readmore">อ่านต่อ <ChevronRight size={12} /></span>
-        </div>
-      </Link>
-    ))}
-  </div>
-) : (
-  <div className="hp-news-empty">ยังไม่มีข่าวสาร</div>
-)}
+              <div className="hp-news-grid">
+                {news.map((item, i) => (
+                  <Link
+                    key={item.id}
+                    to={item.slug ? buildNewsUrl(item) : `/news/${item.id}`}
+                    className="hp-news-card"
+                    style={{ animationDelay: `${0.05 + i * 0.07}s` }}
+                  >
+                    <div className="hp-news-card-bar" />
+                    {item.image_url && (
+                      <div className="hp-news-img-wrap" style={{ height: '300px', overflow: 'hidden', flexShrink: 0 }}>
+                        <img
+                          src={item.image_url}
+                          alt={item.title}
+                          className="hp-news-img"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        />
+                      </div>
+                    )}
+                    <div className="hp-news-body">
+                      <div className="hp-news-meta">
+                        <span>
+                          <Calendar size={11} />
+                          {new Date(item.created_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </span>
+                        <span>
+                          <Clock size={11} />
+                          {Math.max(1, Math.ceil((item.content?.length || 0) / 800))} นาที
+                        </span>
+                      </div>
+                      <h3 className="hp-news-title">{item.title}</h3>
+                      <p className="hp-news-excerpt">{item.content}</p>
+                      <span className="hp-news-readmore">อ่านต่อ <ChevronRight size={12} /></span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="hp-news-empty">ยังไม่มีข่าวสาร</div>
+            )}
           </section>
 
           {/* ── STANDINGS ── */}
