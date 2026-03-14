@@ -686,12 +686,20 @@ const SprintQualTable = ({ laps, stints, drivers, allDrivers=[] }) => {
   const totalLaps = Math.max(...stints.map(s => s.lap_end ?? 0), 1);
   const hasStints = stints.length > 0;
 
+  // หาคนที่ไม่มีเวลา (cross-check กับ allDrivers จาก race results)
+  const seenNums = new Set(sorted.map(l => String(l.driver_number)));
+  const missing = allDrivers
+    .filter(r => r.number && !seenNums.has(String(r.number)))
+    .map(r => ({ ...r }));
+
   const ref = sorted[0].lap_duration;
   const SQ3_CUT = 10;
   const SQ2_CUT = 16;
   const colSpan = 3 + (hasStints ? 1 : 0) + 2;
 
   const rows = [];
+
+  // ── วน sorted แล้วปิด forEach ก่อน ──
   sorted.forEach((lap, i) => {
     const pos = i + 1;
     const d = dMap[lap.driver_number];
@@ -733,7 +741,47 @@ const SprintQualTable = ({ laps, stints, drivers, allDrivers=[] }) => {
         <td className="rr4-t gap" style={{textAlign:'right'}}>{gap ? `+${gap}` : '—'}</td>
       </tr>
     );
-  });
+  }); // ← forEach ปิดที่นี่
+
+  // ── missing block อยู่นอก forEach ──
+  if (missing.length > 0) {
+    rows.push(
+      <tr key="div-no-time">
+        <td colSpan={colSpan} style={{
+          padding:'0.3rem 0.9rem',
+          fontFamily:"'Barlow Condensed',sans-serif",
+          fontSize:'0.68rem',fontWeight:800,
+          letterSpacing:'0.2em',textTransform:'uppercase',
+          color:'rgba(120,120,120,0.5)',
+          borderTop:'1px solid rgba(120,120,120,0.2)',
+          borderBottom:'1px solid rgba(255,255,255,0.04)',
+          background:'rgba(255,255,255,0.02)'
+        }}>── ไม่มีเวลา · {missing.length} คน</td>
+      </tr>
+    );
+    missing.forEach((r, i) => {
+      rows.push(
+        <tr key={`missing-${r.number}`} className="row-dns"
+          style={{animationDelay:`${(sorted.length + i) * 0.025}s`}}>
+          <td className="rr4-pos" style={{
+            fontSize:'0.78rem',
+            color:'rgba(255,255,255,0.15)',
+            fontFamily:"'DM Mono',monospace"
+          }}>—</td>
+          <td><DrvCell
+            last={r.Driver?.familyName ?? `#${r.number}`}
+            first={r.Driver?.givenName ?? ''}
+            num={r.number}
+            color={teamColor(r.Constructor?.name)}
+          /></td>
+          <td className="rr4-team-td">{r.Constructor?.name ?? '—'}</td>
+          {hasStints && <td/>}
+          <td className="rr4-qtd none" style={{textAlign:'right'}}>—</td>
+          <td className="rr4-t gap" style={{textAlign:'right'}}>—</td>
+        </tr>
+      );
+    });
+  }
 
   return (
     <>
@@ -1326,7 +1374,6 @@ const RaceResult = () => {
           setQualStints(Array.isArray(st) ? st : []);
         });
       } else if (newTab === 'sprint') {
-        // ── FIX: sprint อยู่ใน else-if chain ถูกต้องแล้ว ──
         await fetchForSession(OF1_SESSION.sprint, async key => {
           const st = await of1Get(`/stints?session_key=${key}`);
           setSprintStints(Array.isArray(st) ? st : []);
