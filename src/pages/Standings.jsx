@@ -484,6 +484,17 @@ const Standings = () => {
                 <span>•</span>
                 <span>{activeTab === 'drivers' ? `${driverStandings.length} นักแข่ง` : `${constructorStandings.length} ทีม`}</span>
               </div>
+                <p style={{
+    marginTop: '0.75rem',
+    fontSize: '0.75rem',
+    color: 'rgba(255,255,255,0.28)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    letterSpacing: '0.03em',
+  }}>
+    ⏱ คะแนนอัพเดทหลังจบ Race ในแต่ละสนาม
+  </p>
               <div className="st-ghost-num">PTS</div>
             </header>
 

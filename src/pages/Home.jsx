@@ -453,6 +453,17 @@ const Home = () => {
               <h2 className="hp-sec-title"><Trophy size={18} color="#e10600" /> ตาราง<em>คะแนน</em></h2>
               <Link to="/standings" className="hp-sec-link">ดูทั้งหมด <ChevronRight size={13} /></Link>
             </div>
+              <p style={{
+    fontSize: '0.75rem',
+    color: 'rgba(255,255,255,0.3)',
+    marginBottom: '1.25rem',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem'
+  }}>
+    <Timer size={12} />
+     คะแนนอัพเดทหลังจบ Race ในแต่ละสนาม
+  </p>
 
             <div className="hp-standings">
               {/* Driver Standings */}
