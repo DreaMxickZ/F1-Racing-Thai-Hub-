@@ -99,7 +99,7 @@ const Results = () => {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    {race.isSprint && <span className="rs-sprint-badge">🏃 Sprint</span>}
+                    {race.isSprint && <span className="rs-sprint-badge">Sprint</span>}
                     <span className="rs-date">
                       {new Date(race.date).toLocaleDateString('th-TH', {
                         day: 'numeric', month: 'short', year: 'numeric'
