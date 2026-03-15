@@ -299,7 +299,13 @@ const Home = () => {
       setConstructorStandings(constructors.slice(0, 5));
 
       const now = new Date();
-      setNextRace(schedule.find(r => new Date(r.date) > now) || null);
+setNextRace(
+  schedule.find(r => {
+    const raceEnd = new Date(r.date);
+    raceEnd.setDate(raceEnd.getDate() + 1); // +1 วันหลัง Race จบ
+    return raceEnd > now;
+  }) || null
+);
 
       const { data: newsData } = await supabase
         .from('news').select('*').order('created_at', { ascending: false }).limit(4);
