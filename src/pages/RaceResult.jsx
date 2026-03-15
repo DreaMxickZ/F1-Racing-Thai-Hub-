@@ -238,8 +238,19 @@ const computeAvgMap = (laps) => {
   return result;
 };
 
+/* ═══ buildFlMap — คำนวณ Fastest Lap ต่อ driver จาก OpenF1 laps ═══ */
+const buildFlMap = (laps) => {
+  const flMap = {};
+  laps.forEach(l => {
+    if (!l.lap_duration || l.lap_duration <= 0) return;
+    const k = String(l.driver_number);
+    if (!flMap[k] || l.lap_duration < flMap[k].lap_duration)
+      flMap[k] = l;
+  });
+  return flMap;
+};
+
 /* ═══ SESSION NAME MATCHER ═══ */
-// case-insensitive + "sprint race" fallback
 const matchSessionName = (sessionName, target) => {
   const sn = (sessionName ?? '').toLowerCase().trim();
   const t  = (target ?? '').toLowerCase().trim();
@@ -251,14 +262,14 @@ const ApiDisclaimer = () => (
   <div className="rr4-api-disclaimer">
     <Info size={13} className="rr4-api-disclaimer-icon"/>
     <div>
-  <strong>Free API · ข้อมูลอาจล่าช้า</strong>
-  <span className="rr4-api-disclaimer-sep">·</span>
-  Practice / Sprint พร้อมภายใน 30–45 นาทีหลังจบ Session
-  <span className="rr4-api-disclaimer-sep">·</span>
-  Qualifying อาจช้าประมาณ 1 ชั่วโมง ขึ้นไป
-  <span className="rr4-api-disclaimer-sep">·</span>
-  หากไม่โหลด ลองกดแท็บใหม่อีกครั้ง
-</div>
+      <strong>Free API · ข้อมูลอาจล่าช้า</strong>
+      <span className="rr4-api-disclaimer-sep">·</span>
+      Practice / Sprint พร้อมภายใน 30–45 นาทีหลังจบ Session
+      <span className="rr4-api-disclaimer-sep">·</span>
+      Qualifying อาจช้าประมาณ 1 ชั่วโมง ขึ้นไป
+      <span className="rr4-api-disclaimer-sep">·</span>
+      หากไม่โหลด ลองกดแท็บใหม่อีกครั้ง
+    </div>
   </div>
 );
 
@@ -546,16 +557,30 @@ const StatusBadge = ({ status }) => {
   return <span className={`rr4-status-badge ${t}`}>{statusLabel(status)}</span>;
 };
 
-/* ═══ RACE TABLE ═══ */
-const RaceTable = ({ results, showPts=true, stints=[] }) => {
+/* ═══ RACE TABLE ═══
+   - รับ laps (OpenF1) เพิ่มเติม
+   - Fastest Lap: ใช้ OpenF1 เป็นหลัก fallback Jolpica
+════════════════════════════════════════════════════════ */
+const RaceTable = ({ results, showPts=true, stints=[], laps=[] }) => {
   const [hovered, setHovered] = useState(null);
   if(!results.length) return <div className="rr4-empty">ยังไม่มีผลการแข่งขัน</div>;
+
   const sorted=[...results].sort((a,b)=>parseInt(a.position)-parseInt(b.position));
+
+  // ── stint map ──
   const stintMap={};
   stints.forEach(s=>{const k=String(s.driver_number);if(!stintMap[k])stintMap[k]=[];stintMap[k].push(s);});
   Object.values(stintMap).forEach(arr=>arr.sort((a,b)=>(a.lap_start??0)-(b.lap_start??0)));
   const totalLaps=Math.max(...sorted.map(r=>parseInt(r.laps)||0),1);
   const hasStints=stints.length>0;
+
+  // ── OpenF1 fastest lap map (driver_number → lap record) ──
+  const flMap = buildFlMap(laps);
+  const overallFastest = Object.keys(flMap).length
+    ? Math.min(...Object.values(flMap).map(l => l.lap_duration))
+    : null;
+  const hasOf1Fl = overallFastest != null;
+
   return (
     <>
       <Podium results={sorted}/>
@@ -564,16 +589,27 @@ const RaceTable = ({ results, showPts=true, stints=[] }) => {
           <thead><tr>
             <th className="c">P</th><th>นักแข่ง</th><th>ทีม</th>
             {hasStints&&<th>ยาง</th>}
-            <th className="r">เวลา / ห่าง</th><th className="r">Fastest Lap</th>
-            <th className="c">รอบ</th>{showPts&&<th className="r">คะแนน</th>}
+            <th className="r">เวลา / ห่าง</th>
+            <th className="r">Fastest Lap</th>
+            <th className="c">รอบ</th>
+            {showPts&&<th className="r">คะแนน</th>}
           </tr></thead>
           <tbody>
             {sorted.map((r,i)=>{
               const pos=r.position,status=r.status??'',type=classifyStatus(status);
               const finished=type==='finished',isLapped=type==='lap',isDns=type==='dns';
-              const isFl=r.FastestLap?.rank==='1';
               const timeCell=finished?(pos==='1'?(r.Time?.time??'—'):(r.Time?.time?`+${r.Time.time}`:'—')):null;
               const rowCls=isDns?'row-dns':(!finished&&!isLapped)?'row-dnf':'';
+
+              // ── Fastest Lap: OpenF1 ก่อน fallback Jolpica ──
+              const of1Fl   = flMap[String(r.number)];
+              const isFl    = hasOf1Fl
+                ? (of1Fl != null && of1Fl.lap_duration === overallFastest)
+                : r.FastestLap?.rank === '1';
+              const flTime  = of1Fl
+                ? toMMSS(of1Fl.lap_duration)
+                : (r.FastestLap?.Time?.time ?? '—');
+
               return (
                 <tr key={i} className={rowCls} style={{animationDelay:`${i*0.025}s`}}>
                   <td className={`rr4-pos ${posClass(pos)}`}>{pos}</td>
@@ -584,8 +620,13 @@ const RaceTable = ({ results, showPts=true, stints=[] }) => {
                       <InlineTyreBar stintMap={stintMap} driverKey={r.number} totalLaps={totalLaps} hovered={hovered} setHovered={setHovered} minWidth="110px"/>
                     </td>
                   )}
-                  <td className={`rr4-t ${pos==='1'?'win':'gap'}`} style={{textAlign:'right'}}>{finished?timeCell:<StatusBadge status={status}/>}</td>
-                  <td className={`rr4-t ${isFl?'fl':''}`}>{r.FastestLap?.Time?.time??'—'}{isFl&&<span className="rr4-fl"><Zap size={9}/> FL</span>}</td>
+                  <td className={`rr4-t ${pos==='1'?'win':'gap'}`} style={{textAlign:'right'}}>
+                    {finished?timeCell:<StatusBadge status={status}/>}
+                  </td>
+                  <td className={`rr4-t ${isFl?'fl':''}`}>
+                    {flTime}
+                    {isFl&&<span className="rr4-fl"><Zap size={9}/> FL</span>}
+                  </td>
                   <td className="rr4-laps-td">{r.laps}</td>
                   {showPts&&<td className={`rr4-pts-td ${r.points==='0'?'zero':''}`}>{r.points!=='0'?r.points:'—'}</td>}
                 </tr>
@@ -669,20 +710,16 @@ const QualTable = ({ results, allDrivers=[], label='Qualifying', stints=[] }) =>
 const SprintQualTable = ({ laps, stints, drivers, allDrivers=[] }) => {
   const [hovered, setHovered] = useState(null);
   if (!laps.length) return <div className="rr4-empty">ไม่พบข้อมูล Sprint Shootout จาก OpenF1</div>;
-
   const dMap = {};
   drivers.forEach(d => { dMap[d.driver_number] = d; });
-
   const best = {};
   laps.forEach(l => {
     if (!l.lap_duration || l.lap_duration <= 0) return;
     if (!best[l.driver_number] || l.lap_duration < best[l.driver_number].lap_duration)
       best[l.driver_number] = l;
   });
-
   const sorted = Object.values(best).sort((a, b) => a.lap_duration - b.lap_duration);
   if (!sorted.length) return <div className="rr4-empty">ไม่มีข้อมูล Lap Time ใน Sprint Shootout</div>;
-
   const stintMap = {};
   stints.forEach(s => {
     const k = String(s.driver_number);
@@ -692,19 +729,15 @@ const SprintQualTable = ({ laps, stints, drivers, allDrivers=[] }) => {
   Object.values(stintMap).forEach(arr => arr.sort((a, b) => (a.lap_start ?? 0) - (b.lap_start ?? 0)));
   const totalLaps = Math.max(...stints.map(s => s.lap_end ?? 0), 1);
   const hasStints = stints.length > 0;
-
   const seenNums = new Set(sorted.map(l => String(l.driver_number)));
   const missing = allDrivers
     .filter(r => r.number && !seenNums.has(String(r.number)))
     .map(r => ({ ...r }));
-
   const ref = sorted[0].lap_duration;
   const SQ3_CUT = 10;
   const SQ2_CUT = 16;
   const colSpan = 3 + (hasStints ? 1 : 0) + 2;
-
   const rows = [];
-
   sorted.forEach((lap, i) => {
     const pos = i + 1;
     const d = dMap[lap.driver_number];
@@ -713,7 +746,6 @@ const SprintQualTable = ({ laps, stints, drivers, allDrivers=[] }) => {
     const isFl = i === 0;
     const elimSQ2 = pos > SQ3_CUT;
     const elimSQ1 = pos > SQ2_CUT;
-
     if (pos === SQ3_CUT + 1) {
       rows.push(
         <tr key="div-sq2">
@@ -728,7 +760,6 @@ const SprintQualTable = ({ laps, stints, drivers, allDrivers=[] }) => {
         </tr>
       );
     }
-
     rows.push(
       <tr key={lap.driver_number} className={elimSQ1 ? 'q-elim-q1' : elimSQ2 ? 'q-elim-q2' : ''} style={{animationDelay:`${i * 0.025}s`}}>
         <td className={`rr4-pos ${pos <= 3 ? `p${pos}` : ''}`} style={pos > 3 ? {fontSize:'1.1rem',color:'rgba(255,255,255,0.3)'} : {}}>{pos}</td>
@@ -747,7 +778,6 @@ const SprintQualTable = ({ laps, stints, drivers, allDrivers=[] }) => {
       </tr>
     );
   });
-
   if (missing.length > 0) {
     rows.push(
       <tr key="div-no-time">
@@ -767,7 +797,6 @@ const SprintQualTable = ({ laps, stints, drivers, allDrivers=[] }) => {
       );
     });
   }
-
   return (
     <>
       <div className="rr4-prac-note">
@@ -797,18 +826,13 @@ const SprintQualTable = ({ laps, stints, drivers, allDrivers=[] }) => {
 };
 
 /* ═══ SPRINT RESULT TABLE ═══ */
-// Primary: OpenF1 /session_result · Fallback: Jolpica SprintResults
 const SprintResultTable = ({ of1Results, jolResults, stints, drivers }) => {
   const [hovered, setHovered] = useState(null);
-
   const useOf1 = of1Results?.length > 0;
   const useJol = !useOf1 && jolResults?.length > 0;
-
   if (!useOf1 && !useJol) {
     return <div className="rr4-empty">ยังไม่มีข้อมูล Sprint Race — API อาจยังไม่พร้อม</div>;
   }
-
-  // Jolpica fallback — reuse RaceTable (same shape as main race)
   if (useJol) {
     return (
       <>
@@ -822,11 +846,8 @@ const SprintResultTable = ({ of1Results, jolResults, stints, drivers }) => {
       </>
     );
   }
-
-  // ── OpenF1 path ──
   const dMap = {};
   drivers.forEach(d => { dMap[String(d.driver_number)] = d; });
-
   const stintMap = {};
   stints.forEach(s => {
     const k = String(s.driver_number);
@@ -835,28 +856,23 @@ const SprintResultTable = ({ of1Results, jolResults, stints, drivers }) => {
   });
   Object.values(stintMap).forEach(arr => arr.sort((a, b) => (a.lap_start ?? 0) - (b.lap_start ?? 0)));
   const hasStints = stints.length > 0;
-
   const sorted = [...of1Results].sort((a, b) => (a.position ?? 99) - (b.position ?? 99));
   const totalLaps = Math.max(...sorted.map(r => r.laps_count ?? 0), 1);
-
   const fmtGap = g => {
     if (g == null || g === 0 || g === '0' || g === '') return null;
     const s = String(g);
     return s.startsWith('+') ? s : `+${s}`;
   };
-
   const podiumLabels = ['🥇 P1', '🥈 P2', '🥉 P3'];
   const podiumCls    = ['p1', 'p2', 'p3'];
-
   return (
     <>
-      {/* Podium */}
       <div className="rr4-podium">
         {sorted.slice(0, 3).map((r, i) => {
           const d   = dMap[String(r.driver_number)];
           const gap = i === 0
-  ? (r.duration != null ? toMMSS(r.duration) : '—')
-  : (fmtGap(r.gap_to_leader) ?? '—');
+            ? (r.duration != null ? toMMSS(r.duration) : '—')
+            : (fmtGap(r.gap_to_leader) ?? '—');
           return (
             <div key={i} className={`rr4-pod-card ${podiumCls[i]}`}>
               <div className="rr4-pod-ghost">{i + 1}</div>
@@ -871,8 +887,6 @@ const SprintResultTable = ({ of1Results, jolResults, stints, drivers }) => {
           );
         })}
       </div>
-
-      {/* Table */}
       <div className="rr4-tbl-wrap" style={{marginTop:'2px'}}>
         <table className="rr4-tbl">
           <thead>
@@ -896,16 +910,14 @@ const SprintResultTable = ({ of1Results, jolResults, stints, drivers }) => {
               const isDns = !!(r.dns);
               const isDsq = !!(r.dsq);
               const gap = i === 0
-  ? (r.duration != null ? toMMSS(r.duration) : '—')
-  : (fmtGap(r.gap_to_leader) ?? '—');
+                ? (r.duration != null ? toMMSS(r.duration) : '—')
+                : (fmtGap(r.gap_to_leader) ?? '—');
               const isFl  = r.fastest_lap_rank === 1 || r.fastest_lap === true;
               const rowCls = isDns ? 'row-dns' : (isDnf || isDsq) ? 'row-dnf' : '';
-
               let statusEl = null;
               if (isDsq) statusEl = <span className="rr4-status-badge dsq">DSQ</span>;
               else if (isDns) statusEl = <span className="rr4-status-badge dns">DNS</span>;
               else if (isDnf) statusEl = <span className="rr4-status-badge ret">Retired</span>;
-
               return (
                 <tr key={r.driver_number ?? i} className={rowCls} style={{animationDelay:`${i * 0.025}s`}}>
                   <td className={`rr4-pos ${posClass(String(pos))}`}>{pos}</td>
@@ -1085,22 +1097,32 @@ const LapTable = ({ laps, drivers }) => {
             <th className="c">S1</th><th className="c">S2</th><th className="c">S3</th>
           </tr></thead>
           <tbody>
-            {filtered.slice(0,100).map((lap,i)=>{
-              const dur=lap.lap_duration,isFastest=dur===gMin;
-              const barW=dur?Math.max(4,(1-(dur-gMin)/range)*100):0;
-              const d=dMap[lap.driver_number],color=d?.team_colour?`#${d.team_colour}`:'#555';
-              return (
-                <tr key={i} style={{animationDelay:`${Math.min(i,30)*0.015}s`}}>
-                  <td className="rr4-lap-num-td">{lap.lap_number}</td>
-                  {sel==='ALL'&&<td><div className="rr4-drv"><div className="rr4-bar" style={{background:color,height:28}}/><div className="rr4-drv-last" style={{fontSize:'0.95rem'}}>{d?.name_acronym??`#${lap.driver_number}`}</div></div></td>}
-                  <td className={`rr4-lap-t-td ${isFastest?'fastest':''}`}>{dur!=null?dur.toFixed(3):'—'}{isFastest&&<span className="rr4-fl"><Zap size={9}/> FL</span>}</td>
-                  <td className="rr4-bar-wrap"><div className="rr4-bar-bg"><div className="rr4-bar-fill" style={{width:`${barW}%`,background:isFastest?'#b44eff':'#e10600'}}/></div></td>
-                  <td className="rr4-sec-td">{lap.duration_sector_1!=null?lap.duration_sector_1.toFixed(3):'—'}</td>
-                  <td className="rr4-sec-td">{lap.duration_sector_2!=null?lap.duration_sector_2.toFixed(3):'—'}</td>
-                  <td className="rr4-sec-td">{lap.duration_sector_3!=null?lap.duration_sector_3.toFixed(3):'—'}</td>
-                </tr>
-              );
-            })}
+            {(()=>{
+              const driverMin=sel!=='ALL'?Math.min(...filtered.map(l=>l.lap_duration).filter(v=>v>0)):null;
+              return filtered.slice(0,100).map((lap,i)=>{
+                const dur=lap.lap_duration;
+                const isFastestAll=dur===gMin;
+                const isFastestDriver=sel!=='ALL'&&dur===driverMin;
+                const barW=dur?Math.max(4,(1-(dur-gMin)/range)*100):0;
+                const d=dMap[lap.driver_number],color=d?.team_colour?`#${d.team_colour}`:'#555';
+                const rowBg=isFastestDriver&&!isFastestAll?'rgba(255,200,0,0.04)':isFastestAll?'rgba(180,78,255,0.06)':'transparent';
+                return (
+                  <tr key={i} style={{animationDelay:`${Math.min(i,30)*0.015}s`,background:rowBg}}>
+                    <td className="rr4-lap-num-td">{lap.lap_number}</td>
+                    {sel==='ALL'&&<td><div className="rr4-drv"><div className="rr4-bar" style={{background:color,height:28}}/><div className="rr4-drv-last" style={{fontSize:'0.95rem'}}>{d?.name_acronym??`#${lap.driver_number}`}</div></div></td>}
+                    <td className={`rr4-lap-t-td ${isFastestAll?'fastest':isFastestDriver?'p1t':''}`}>
+                      {dur!=null?toMMSS(dur):'—'}
+                      {isFastestAll&&<span className="rr4-fl"><Zap size={9}/> FL</span>}
+                      {isFastestDriver&&!isFastestAll&&<span style={{display:'inline-flex',alignItems:'center',gap:'0.2rem',background:'rgba(255,200,0,0.12)',border:'1px solid rgba(255,200,0,0.3)',color:'rgba(255,210,0,0.9)',borderRadius:'2px',fontFamily:"'Barlow Condensed',sans-serif",fontSize:'0.68rem',fontWeight:800,letterSpacing:'0.1em',padding:'0.15rem 0.4rem',marginLeft:'0.4rem',verticalAlign:'middle'}}>⚡ BEST</span>}
+                    </td>
+                    <td className="rr4-bar-wrap"><div className="rr4-bar-bg"><div className="rr4-bar-fill" style={{width:`${barW}%`,background:isFastestAll?'#b44eff':isFastestDriver?'#FFD700':'#e10600'}}/></div></td>
+                    <td className="rr4-sec-td">{lap.duration_sector_1!=null?lap.duration_sector_1.toFixed(3):'—'}</td>
+                    <td className="rr4-sec-td">{lap.duration_sector_2!=null?lap.duration_sector_2.toFixed(3):'—'}</td>
+                    <td className="rr4-sec-td">{lap.duration_sector_3!=null?lap.duration_sector_3.toFixed(3):'—'}</td>
+                  </tr>
+                );
+              });
+            })()}
           </tbody>
         </table>
         {filtered.length>100&&<div style={{textAlign:'center',padding:'0.85rem',fontSize:'0.75rem',color:'rgba(255,255,255,0.18)',fontFamily:'DM Mono'}}>แสดง 100 / {filtered.length} รอบ</div>}
@@ -1382,13 +1404,13 @@ const RaceResult = () => {
   // ── Jolpica results ──
   const [raceRes,       setRaceRes]       = useState([]);
   const [qualRes,       setQualRes]       = useState([]);
-  const [sprintRes,     setSprintRes]     = useState([]); // Jolpica SprintResults (fallback)
+  const [sprintRes,     setSprintRes]     = useState([]);
 
   // ── OpenF1 results ──
-  const [sprintOf1Res,  setSprintOf1Res]  = useState([]); // OpenF1 /session_result for Sprint
+  const [sprintOf1Res,  setSprintOf1Res]  = useState([]);
 
   // ── OpenF1 laps ──
-  const [raceLaps,      setRaceLaps]      = useState([]);
+  const [raceLaps,      setRaceLaps]      = useState([]); // ← ใช้ใน RaceTable ด้วย
   const [sprintLaps,    setSprintLaps]    = useState([]);
   const [sprintQLaps,   setSprintQLaps]   = useState([]);
   const [fp1Laps,       setFp1Laps]       = useState([]);
@@ -1415,7 +1437,6 @@ const RaceResult = () => {
 
   const isSprint = !!(race?.Sprint);
 
-  // ── Session name matcher (case-insensitive + "sprint race" alias) ──
   const getKey = useCallback((sessions, name) =>
     sessions.find(s => {
       const sn = (s.session_name ?? '').toLowerCase().trim();
@@ -1464,11 +1485,9 @@ const RaceResult = () => {
           Math.abs(new Date(s.date_start).getTime() - raceTs) < 5 * 86400000
         );
         sessionsRef.current = weekend;
-        // store with original name AND lowercase for flexible lookup
         weekend.forEach(s => {
           const lower = (s.session_name ?? '').toLowerCase().trim();
           skeyRef.current[lower] = s.session_key;
-          // also store "sprint race" → same key as "sprint"
           if (lower === 'sprint race') skeyRef.current['sprint'] = s.session_key;
         });
         const raceKey = getKey(weekend, 'race');
@@ -1534,19 +1553,28 @@ const RaceResult = () => {
         await Promise.all(promises);
       };
 
-      // ── Race ──
+      // ── Race — ดึง stints + laps พร้อมกัน ──
       if (newTab === 'race') {
         await fetchForSession('Race', async key => {
-          const st = await of1Get(`/stints?session_key=${key}`);
+          const [st, laps] = await Promise.all([
+            of1Get(`/stints?session_key=${key}`),
+            of1Get(`/laps?session_key=${key}`),
+          ]);
           setRaceStints(Array.isArray(st) ? st : []);
+          setRaceLaps(Array.isArray(laps) ? laps : []);
+          fetched.current.add('laps'); // mark laps โหลดแล้ว ไม่โหลดซ้ำ
         });
 
-      // ── Laps ──
+      // ── Laps tab — ถ้า race tab โหลด laps ไปแล้วก็ข้ามได้ ──
       } else if (newTab === 'laps') {
-        await fetchForSession('Race', async key => {
-          const d = await of1Get(`/laps?session_key=${key}`);
-          setRaceLaps(Array.isArray(d) ? d : []);
-        });
+        if (fetched.current.has('laps')) {
+          // raceLaps มีข้อมูลแล้ว ไม่ต้องโหลดซ้ำ
+        } else {
+          await fetchForSession('Race', async key => {
+            const d = await of1Get(`/laps?session_key=${key}`);
+            setRaceLaps(Array.isArray(d) ? d : []);
+          });
+        }
 
       // ── Pits ──
       } else if (newTab === 'pits') {
@@ -1571,7 +1599,7 @@ const RaceResult = () => {
           setQualStints(Array.isArray(st) ? st : []);
         });
 
-      // ── Sprint Race ── (OpenF1 primary via /session_result)
+      // ── Sprint Race ──
       } else if (newTab === 'sprint') {
         await fetchForSession('Sprint', async key => {
           const [sr, st] = await Promise.all([
@@ -1593,7 +1621,7 @@ const RaceResult = () => {
           setSprintQStints(Array.isArray(st) ? st : []);
         });
 
-      // ── Sprint Laps ── (reuse sprint fetch if done)
+      // ── Sprint Laps ──
       } else if (newTab === 'sprint_laps') {
         if (!fetched.current.has('sprint')) {
           await fetchForSession('Sprint', async key => {
@@ -1605,10 +1633,9 @@ const RaceResult = () => {
             setSprintOf1Res(Array.isArray(sr) ? sr : []);
             setSprintLaps(Array.isArray(laps) ? laps : []);
             setSprintStints(Array.isArray(st) ? st : []);
-            fetched.current.add('sprint'); // mark sprint fetched too
+            fetched.current.add('sprint');
           });
         } else {
-          // sprint stints already loaded, just fetch laps
           const key = getKey(sessions, 'Sprint');
           if (key) {
             const laps = await of1Get(`/laps?session_key=${key}`);
@@ -1616,7 +1643,7 @@ const RaceResult = () => {
           }
         }
 
-      // ── Sprint Tyres ── (reuse sprint fetch if done)
+      // ── Sprint Tyres ──
       } else if (newTab === 'sprint_tyres') {
         if (!fetched.current.has('sprint')) {
           await fetchForSession('Sprint', async key => {
@@ -1629,9 +1656,8 @@ const RaceResult = () => {
             fetched.current.add('sprint');
           });
         }
-        // if sprint already fetched → sprintStints already populated, nothing to do
 
-      // ── Sprint Q Tyres ── (reuse sprint_q fetch if done)
+      // ── Sprint Q Tyres ──
       } else if (newTab === 'sprint_q_tyres') {
         if (!fetched.current.has('sprint_q')) {
           await fetchForSession('Sprint Qualifying', async key => {
@@ -1687,7 +1713,6 @@ const RaceResult = () => {
     }
   }, [ensureSessions, getKey]);
 
-  // ── getTabDrivers — case-insensitive lookup via skeyRef ──
   const getTabDrivers = useCallback((sessionName) => {
     const lower = (sessionName ?? '').toLowerCase().trim();
     const key = skeyRef.current[lower]
@@ -1701,13 +1726,11 @@ const RaceResult = () => {
   const handleTab = key => { setTab(key); setWarn(null); loadTab(key); };
   const isLoaded  = key => fetched.current.has(key);
 
-  // sort keys for tyre timeline
   const raceSortKeys = {};
   raceRes.forEach(r => { raceSortKeys[r.number] = parseInt(r.position) || 99; });
 
   const sprintSortKeys = {};
   sprintOf1Res.forEach(r => { sprintSortKeys[String(r.driver_number)] = r.position ?? 99; });
-  // also from jolpica as fallback
   sprintRes.forEach(r => {
     if (!sprintSortKeys[r.number]) sprintSortKeys[r.number] = parseInt(r.position) || 99;
   });
@@ -1725,11 +1748,6 @@ const RaceResult = () => {
       { key: 'laps', label: '📊 Lap Times' },
       { key: 'pits', label: '🔧 Pit Stops' },
       { key: 'grid', label: '📈 Grid vs Finish', cls: 'grid-tab' },
-      ...(isSprint ? [
-        // { key: 'sprint_laps',  label: '📊 Sprint Laps',  cls: 'sprint-tab' },
-        // { key: 'sprint_tyres', label: '🟠 Sprint Tyres', cls: 'sprint-tab tyre-tab' },
-        // { key: 'sprint_q_tyres', label: '🟡 SQ Tyres',  cls: 'sprint-tab tyre-tab' },
-      ] : []),
     ]},
     { label: '🧪  Practice · OpenF1', tabs: [
       { key: 'fp1', label: 'FP 1', cls: 'practice-tab' },
@@ -1758,9 +1776,9 @@ const RaceResult = () => {
     fp1: fp1Laps.length, fp2: fp2Laps.length, fp3: fp3Laps.length,
   };
 
-  // source badge per tab
   const apiSourceLabel = {
-    race: 'Jolpica Ergast', qual: 'Jolpica Ergast',
+    race: 'Jolpica Ergast + OpenF1', // ← อัปเดต label
+    qual: 'Jolpica Ergast',
     sprint: 'OpenF1 + Jolpica', sprint_q: 'OpenF1',
     laps: 'OpenF1', pits: 'OpenF1', grid: 'Jolpica Ergast',
     sprint_laps: 'OpenF1', sprint_tyres: 'OpenF1', sprint_q_tyres: 'OpenF1',
@@ -1868,9 +1886,14 @@ const RaceResult = () => {
                 <TabSpinner label="กำลังโหลดจาก OpenF1..."/>
               ) : (
                 <>
-                  {/* Race */}
+                  {/* Race — ส่ง laps เพิ่มเติม */}
                   {tab === 'race' && (
-                    <RaceTable results={raceRes} showPts={true} stints={raceStints}/>
+                    <RaceTable
+                      results={raceRes}
+                      showPts={true}
+                      stints={raceStints}
+                      laps={raceLaps}
+                    />
                   )}
 
                   {/* Qualifying */}
@@ -1878,7 +1901,7 @@ const RaceResult = () => {
                     <QualTable results={qualRes} allDrivers={raceRes} stints={qualStints}/>
                   )}
 
-                  {/* Sprint Race — OpenF1 primary, Jolpica fallback */}
+                  {/* Sprint Race */}
                   {tab === 'sprint' && (
                     <SprintResultTable
                       of1Results={sprintOf1Res}
@@ -1888,7 +1911,7 @@ const RaceResult = () => {
                     />
                   )}
 
-                  {/* Sprint Qualifying / Shootout */}
+                  {/* Sprint Qualifying */}
                   {tab === 'sprint_q' && (
                     <SprintQualTable
                       laps={sprintQLaps}
